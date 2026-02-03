@@ -1,0 +1,2 @@
+F:/Yadhava/posbuss_milk_delivery-main/android/app/.cxx/RelWithDebInfo/46673o41/armeabi-v7a/CMakeFiles/edit_cache.dir
+F:/Yadhava/posbuss_milk_delivery-main/android/app/.cxx/RelWithDebInfo/46673o41/armeabi-v7a/CMakeFiles/rebuild_cache.dir
