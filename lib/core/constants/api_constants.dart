@@ -1,7 +1,6 @@
 class ApiConstants {
   ///login section
-  //static const String baseUrl = "http://10.0.2.2:5274/yadhava/api/";
-  static const String baseUrl = "http://localhost:5274/yadhava/api/";
+  static const String baseUrl = "http://10.0.2.2:5274/yadhava/api/";
   //static const String baseUrl = "http://www.posbuss.com:98/yadhava/api/";
   static const String companyGetAll = "Company/GetCompanyAll";
   static const String getRoute = "MobileAppLogin/GetMobileAppGetRoutes?";
@@ -79,7 +78,11 @@ class ApiConstants {
   static const String mobileAppSalesDashBoardHome =
       'MobileAppSales/GetMobileAppSalesDashBoardHome?';
 
+  static const String getMobileActiveClients =
+      'Client/GetMobileActiveClients?';
 
+  static const String getMobileInActiveClients =
+      'Client/GetMobileInActiveClients?';
 
 }
 // static const String secondBaseUrl = "http://localhost:5274/api/";

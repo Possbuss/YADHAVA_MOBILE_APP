@@ -21,6 +21,14 @@ class SyncClientListEvent extends ClientListEvent {
  const SyncClientListEvent(this.query);
 }
 
+class GetActiveClientListEvent extends ClientListEvent{
+ const GetActiveClientListEvent();
+}
+
+class GetInActiveClientListEvent extends ClientListEvent{
+ const GetInActiveClientListEvent();
+}
+
 class FetchClientLocationEvent extends ClientListEvent {
  final String clientId;
  final double latitude;

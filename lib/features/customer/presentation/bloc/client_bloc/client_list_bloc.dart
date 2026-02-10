@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../auth/data/login_model.dart';
 import '../../../../auth/domain/login_repo.dart';
+import '../../../data/client_active_inactive_model.dart';
 import '../../../data/client_model.dart';
 import '../../../domain/client_repo.dart';
 
@@ -17,12 +18,84 @@ part 'client_list_state.dart';
 class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   final GetClientListRepo clientListRepo;
   List<ClientModel> _allClients = []; // Store the full client list
+  List<ClientActiveInActiveModel> _allClientsActive = []; // Store the full client list
+  List<ClientActiveInActiveModel> _allClientsInActive = []; // Store the full client list
 
   ClientListBloc(this.clientListRepo) : super(ClientListInitial()) {
     on<ClientListGetEvent>(_onGetClientListEvent);
     on<SyncClientListEvent>(_onSyncClientListEvent);
     on<ClientListSearchEvent>(_onSearchClientListEvent);
     on<FetchClientLocationEvent>(_onFetchClientLocationEvent);
+
+    on<GetActiveClientListEvent>(_onGetActiveClientList);
+    on<GetInActiveClientListEvent>(_onGetInActiveClientList);
+  }
+
+  Future<void> _onGetActiveClientList(
+      GetActiveClientListEvent event,
+      Emitter<ClientListState> emit,
+      ) async {
+    emit(ClientListActiveLoading());
+    try {
+      final db = LocalDbHelper();
+      GetLoginRepo loginRepo = GetLoginRepo();
+      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+
+      final response = await clientListRepo.getClientListActive(loginModel?.companyId,loginModel?.routeId ?? 0,0);
+      if (response != null &&
+          (response.statusCode == 200 || response.statusCode == 201)) {
+        final data = response.data as List<dynamic>;
+        final clients = data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
+
+        await db.clearActiveClient();
+        await db.insertActiveClients(clients);
+
+        _allClientsActive = clients;
+        emit(
+            ClientListActiveLoaded(clientList: clients, locations: const {}));
+      } else {
+        emit(ClientListError(
+            message:
+            'Failed to fetch company data. Status code: ${response?.statusCode}'));
+      }
+
+    } catch (ex) {
+      emit(ClientListError(message: 'An error occurred: ${ex.toString()}'));
+    }
+  }
+
+  Future<void> _onGetInActiveClientList(
+      GetInActiveClientListEvent event,
+      Emitter<ClientListState> emit,
+      ) async {
+    emit(ClientListInActiveLoading());
+    try {
+
+      final db = LocalDbHelper();
+      GetLoginRepo loginRepo = GetLoginRepo();
+      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+
+      final response = await clientListRepo.getClientListInActive(loginModel?.companyId,loginModel?.routeId ?? 0,0);
+      if (response != null &&
+          (response.statusCode == 200 || response.statusCode == 201)) {
+        final data = response.data as List<dynamic>;
+        final clients = data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
+
+        await db.clearInActiveClient();
+        await db.insertActiveClients(clients);
+
+        _allClientsInActive = clients;
+        emit(
+            ClientListInActiveLoaded(clientList: clients, locations: const {}));
+      } else {
+        emit(ClientListError(
+            message:
+            'Failed to fetch company data. Status code: ${response?.statusCode}'));
+      }
+
+    } catch (ex) {
+      emit(ClientListError(message: 'An error occurred: ${ex.toString()}'));
+    }
   }
 
   Future<void> _onSyncClientListEvent(

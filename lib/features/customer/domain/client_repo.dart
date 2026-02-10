@@ -11,7 +11,8 @@ import '../data/client_model.dart';
 class GetClientListRepo {
 
   final ApiQuery apiQuery = ApiQuery();
-Session session=Session();
+  Session session=Session();
+
   Future<Response?> getClientListRepo(int? companyId,int? routeId,int? id) async {
 
     String token= await session.tokenExpired();
@@ -73,5 +74,34 @@ Session session=Session();
     } catch (ex) {
       throw Exception('Failed to fetch company list: ${ex.toString()}');
     }
+  }
+
+  Future<Response?> getClientListActive(int? companyId,int? routeId,int? id) async {
+
+    String token= await session.tokenExpired();
+    try {
+      String token = await session.tokenExpired();
+      final response = await apiQuery.getQuery(
+          "${ApiConstants.getMobileActiveClients}companyId=$companyId&routeId=$routeId",
+          token);
+      return response;
+    } catch (ex) {
+      throw Exception('Failed to fetch getClientListActive list: ${ex.toString()}');
+    }
+  }
+
+  Future<Response?> getClientListInActive(int? companyId,int? routeId,int? id) async {
+
+    String token= await session.tokenExpired();
+    try {
+      String token = await session.tokenExpired();
+      final response = await apiQuery.getQuery(
+          "${ApiConstants.getMobileInActiveClients}companyId=$companyId&routeId=$routeId",
+          token);
+      return response;
+    } catch (ex) {
+      throw Exception('Failed to fetch getClientListInActive list: ${ex.toString()}');
+    }
+
   }
 }
