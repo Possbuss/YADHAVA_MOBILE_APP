@@ -11,6 +11,7 @@ import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../features/customer/data/client_active_inactive_model.dart';
 import '../../features/customer/model/last_invoice_model.dart';
 import '../../features/customer/model/mobile_app_sales_Invoice_all.dart';
 import '../../features/customer/presentation/pages/customer_details/model/order_model.dart';
@@ -76,6 +77,16 @@ class LocalDbHelper {
             dbBackupPath TEXT,
             upiId TEXT
           )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS clients_active_inactive (
+            clientId INTEGER PRIMARY KEY,            
+            clientName TEXT,
+            routeId INTEGER,
+            invoiceDate TEXT,
+            clientType TEXT
+            )
         ''');
 
         await db.execute('''
@@ -1315,6 +1326,87 @@ class LocalDbHelper {
       invoices.add(invoice);
     }
     return invoices;
+  }
+
+  // ------------------------------- + ----
+  // In Active , Active Clients
+  // ------------------------------- + ----
+
+  Future<void> insertActiveClients(List<ClientActiveInActiveModel> clients) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final client in clients) {
+        final data = client.toJson();
+        data['clientType'] = 'ACTIVE';
+        batch.insert(
+          'clients_active_inactive',
+          client.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true); // set noResult to true for speed
+    });
+  }
+
+  Future<void> insertInActiveClients(List<ClientActiveInActiveModel> clients) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final client in clients) {
+        final data = client.toJson();
+        data['clientType'] = 'INACTIVE';
+        batch.insert(
+          'clients_active_inactive',
+          client.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true); // set noResult to true for speed
+    });
+  }
+
+  Future<List<ClientModel>> getActiveClients(int? routeId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('clients_active_inactive',
+        where: 'routeId = ? AND clientType = ?',
+        whereArgs: [routeId, 'ACTIVE']);
+
+    return List.generate(maps.length, (i) {
+      return ClientModel.fromJson(maps[i]);
+    });
+  }
+
+  Future<List<ClientModel>> getInActiveClients(int? routeId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('clients_active_inactive',
+        where: 'routeId = ? AND clientType = ?',
+        whereArgs: [routeId, 'INACTIVE']);
+
+    return List.generate(maps.length, (i) {
+      return ClientModel.fromJson(maps[i]);
+    });
+  }
+
+  Future<void> clearAllActiveInActiveClient() async {
+    final db = await database;
+    await db.delete('clients_active_inactive');
+  }
+
+  Future<void> clearActiveClient() async {
+    final db = await database;
+    await db.delete(
+      'clients_active_inactive',
+      where: "clientType = 'ACTIVE'",
+    );
+  }
+
+  Future<void> clearInActiveClient() async {
+    final db = await database;
+    await db.delete(
+      'clients_active_inactive',
+      where: "clientType = 'INACTIVE'",
+    );
   }
 
   // -------------------------------
