@@ -1341,7 +1341,7 @@ class LocalDbHelper {
         data['clientType'] = 'ACTIVE';
         batch.insert(
           'clients_active_inactive',
-          client.toJson(),
+          data,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1358,7 +1358,7 @@ class LocalDbHelper {
         data['clientType'] = 'INACTIVE';
         batch.insert(
           'clients_active_inactive',
-          client.toJson(),
+          data,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1366,26 +1366,64 @@ class LocalDbHelper {
     });
   }
 
-  Future<List<ClientModel>> getActiveClients(int? routeId) async {
+  Future<List<ClientActiveInActiveModel>> getActiveClients(int? routeId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('clients_active_inactive',
         where: 'routeId = ? AND clientType = ?',
         whereArgs: [routeId, 'ACTIVE']);
 
     return List.generate(maps.length, (i) {
-      return ClientModel.fromJson(maps[i]);
+      return ClientActiveInActiveModel.fromJson(maps[i]);
     });
   }
 
-  Future<List<ClientModel>> getInActiveClients(int? routeId) async {
+  Future<List<ClientActiveInActiveModel>> getInActiveClients(int? routeId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('clients_active_inactive',
         where: 'routeId = ? AND clientType = ?',
         whereArgs: [routeId, 'INACTIVE']);
 
     return List.generate(maps.length, (i) {
-      return ClientModel.fromJson(maps[i]);
+      return ClientActiveInActiveModel.fromJson(maps[i]);
     });
+  }
+
+  Future<bool> isEmptyActiveClients(int? routeId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM clients_active_inactive WHERE routeId = ? AND clientType = ?',
+      [routeId, 'ACTIVE'],
+    );
+    int count = Sqflite.firstIntValue(result) ?? 0;
+    return count == 0;
+  }
+
+  Future<int> countActiveClients(int? routeId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM clients_active_inactive WHERE routeId = ? AND clientType = ?',
+      [routeId, 'ACTIVE'],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> countInActiveClients(int? routeId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM clients_active_inactive WHERE routeId = ? AND clientType = ?',
+      [routeId, 'INACTIVE'],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<bool> isEmptyInActiveClients(int? routeId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM clients_active_inactive WHERE routeId = ? AND clientType = ?',
+      [routeId, 'INACTIVE'],
+    );
+    int count = Sqflite.firstIntValue(result) ?? 0;
+    return count == 0;
   }
 
   Future<void> clearAllActiveInActiveClient() async {
@@ -1631,5 +1669,10 @@ class LocalDbHelper {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('clientSyncDate', dateTime.toString());
     print("✅ Saved: route=$dateTime");
+  }
+
+  Future<String?> getClientSyncDateStamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('clientSyncDate');
   }
 }

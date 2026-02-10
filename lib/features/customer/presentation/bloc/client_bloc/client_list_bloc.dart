@@ -41,6 +41,17 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
       GetLoginRepo loginRepo = GetLoginRepo();
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
 
+      if (!event.forceRefresh) {
+        final isLocalEmpty = await db.isEmptyActiveClients(loginModel?.routeId);
+        if (!isLocalEmpty) {
+          final localClients = await db.getActiveClients(loginModel?.routeId);
+          _allClientsActive = localClients;
+          emit(ClientListActiveLoaded(
+              clientList: localClients, locations: const {}));
+          return;
+        }
+      }
+
       final response = await clientListRepo.getClientListActive(loginModel?.companyId,loginModel?.routeId ?? 0,0);
       if (response != null &&
           (response.statusCode == 200 || response.statusCode == 201)) {
@@ -75,6 +86,17 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
       GetLoginRepo loginRepo = GetLoginRepo();
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
 
+      if (!event.forceRefresh) {
+        final isLocalEmpty = await db.isEmptyInActiveClients(loginModel?.routeId);
+        if (!isLocalEmpty) {
+          final localClients = await db.getInActiveClients(loginModel?.routeId);
+          _allClientsInActive = localClients;
+          emit(ClientListInActiveLoaded(
+              clientList: localClients, locations: const {}));
+          return;
+        }
+      }
+
       final response = await clientListRepo.getClientListInActive(loginModel?.companyId,loginModel?.routeId ?? 0,0);
       if (response != null &&
           (response.statusCode == 200 || response.statusCode == 201)) {
@@ -82,7 +104,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         final clients = data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
 
         await db.clearInActiveClient();
-        await db.insertActiveClients(clients);
+        await db.insertInActiveClients(clients);
 
         _allClientsInActive = clients;
         emit(
@@ -118,6 +140,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
 
         await db.clearClients();
         await db.insertClients(clients);
+        await db.updateClientSyncDateStamp(DateTime.now());
 
         _allClients = clients;
         emit(
@@ -163,6 +186,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
 
           await db.clearClients();
           await db.insertClients(clients);
+          await db.updateClientSyncDateStamp(DateTime.now());
 
           _allClients = clients;
           emit(
@@ -360,4 +384,3 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
 //     return super.close();
 //   }
 // }
-

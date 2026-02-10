@@ -27,6 +27,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/color.dart';
 import '../../../../core/constants/textthemes.dart';
+import '../../../../core/util/local_db_helper.dart';
 import '../../../customer/presentation/bloc/inovice_bloc/invoice_bloc.dart';
 import '../../../customer/presentation/bloc/last_invoice_bloc/lastinvoice_bloc.dart';
 import '../../../customer/presentation/pages/customer_details/bloc/add_item_bloc.dart';
@@ -49,6 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int companyId = 0;
   int driverId = 0;
   int routeId = 0;
+  int activeCount = 0;
+  int inactiveCount = 0;
 
   GetLoginRepo loginRepo = GetLoginRepo();
   @override
@@ -59,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
 
       if(await getLoginResponse()){
+        await _loadClientCounts();
 
         context.read<HomeBloc>().add(HomeGetEvent(formattedDate));
         context.read<LastInvoiceBloc>().add(FetchLastInvoice(0));
@@ -78,6 +82,17 @@ class _HomeScreenState extends State<HomeScreen> {
     // getLoginResponse();
     // context.read<TotalSalesBloc>().add(const TotalSalesGetEvent());
     //  context.read<StockListBloc>().add(const StockListGetEvent());
+  }
+
+  Future<void> _loadClientCounts() async {
+    final db = LocalDbHelper();
+    final active = await db.countActiveClients(routeId);
+    final inactive = await db.countInActiveClients(routeId);
+    if (!mounted) return;
+    setState(() {
+      activeCount = active;
+      inactiveCount = inactive;
+    });
   }
 
   Future<bool> getLoginResponse() async {
@@ -140,82 +155,88 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.check_circle, color: Colors.green),
-                  title: const Text("Active Customers",
-                      style: TextStyle(color: Colors.white)),
-                  trailing: const Text(
-                    '100',
+                  title: const Text(
+                    "Active Customers",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  trailing: Text(
+                    activeCount.toString(),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.green,
                     ),
                   ),
-                  onTap: (){
+                  onTap: () async {
                     Navigator.pop(context); // close drawer
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ActiveClientListScreen(),
                       ),
                     );
+                    await _loadClientCounts();
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.cancel, color: Colors.orange),
-                  title: const Text("Inactive Customers",
-                      style: TextStyle(color: Colors.white)),
-                  trailing: const Text(
-                    '200',
+                  title: const Text(
+                    "Inactive Customers",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  trailing: Text(
+                    inactiveCount.toString(),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.orange,
                     ),
                   ),
-                  onTap: (){
+                  onTap: () async {
                     Navigator.pop(context); // close drawer
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const InActiveClientListScreen(),
                       ),
                     );
+                    await _loadClientCounts();
                   },
                 ),
 
                 const Divider(color: Colors.white54),
 
-                // 🔄 Sync Clients Button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      // TODO: implement your sync logic
-                      // await syncClients();
-                      ScaffoldMessenger.of(context).showSnackBar(
-
-                        const SnackBar(content: Text('Syncing clients...')),
-                      );
-                    },
-                    icon: const Icon(Icons.sync, size: 22),
-                    label: const Text(
-                      "Sync Clients",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      shadowColor: Colors.blueAccent.withOpacity(0.4),
-                    ),
-                  ),
-                ),
+                // 🔄 Sync Clients Button (disabled for now)
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                //   child: ElevatedButton.icon(
+                //     onPressed: () async {
+                //       // TODO: implement your sync logic
+                //       // await syncClients();
+                //       ScaffoldMessenger.of(context).showSnackBar(
+                //
+                //         const SnackBar(content: Text('Syncing clients...')),
+                //       );
+                //     },
+                //     icon: const Icon(Icons.sync, size: 22),
+                //     label: const Text(
+                //       "Sync Clients",
+                //       style: TextStyle(
+                //         fontSize: 16,
+                //         fontWeight: FontWeight.w600,
+                //         letterSpacing: 0.5,
+                //       ),
+                //     ),
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: Colors.blueAccent,
+                //       foregroundColor: Colors.white,
+                //       minimumSize: const Size(double.infinity, 50),
+                //       elevation: 4,
+                //       shape: RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       shadowColor: Colors.blueAccent.withOpacity(0.4),
+                //     ),
+                //   ),
+                // ),
 
 
                 const Spacer(), // ✅ Pushes logout to the bottom

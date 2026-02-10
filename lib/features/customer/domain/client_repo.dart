@@ -24,7 +24,7 @@ class GetClientListRepo {
         routeId: routeId,
         clientId: id,
         companyId: companyId,
-        dateTime: DateTime.now().toString()
+        dateTime: (await LocalDbHelper().getClientSyncDateStamp()) ?? ""
       );
 
 
@@ -34,8 +34,6 @@ class GetClientListRepo {
           clientRequestModel.toJson()
       );
 
-      var db = LocalDbHelper();
-      db.updateClientSyncDateStamp(DateTime.timestamp());
       return response;
 
 
@@ -55,7 +53,7 @@ class GetClientListRepo {
           routeId: routeId,
           clientId: id,
           companyId: companyId,
-          dateTime: ""
+          dateTime: (await LocalDbHelper().getClientSyncDateStamp()) ?? ""
       );
 
 
@@ -64,9 +62,6 @@ class GetClientListRepo {
           token,
           clientRequestModel.toJson()
       );
-
-      var db = LocalDbHelper();
-      db.updateClientSyncDateStamp(DateTime.timestamp());
 
       return response;
 

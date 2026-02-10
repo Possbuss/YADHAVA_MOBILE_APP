@@ -22,11 +22,13 @@ class SyncClientListEvent extends ClientListEvent {
 }
 
 class GetActiveClientListEvent extends ClientListEvent{
- const GetActiveClientListEvent();
+ final bool forceRefresh;
+ const GetActiveClientListEvent({this.forceRefresh = false});
 }
 
 class GetInActiveClientListEvent extends ClientListEvent{
- const GetInActiveClientListEvent();
+ final bool forceRefresh;
+ const GetInActiveClientListEvent({this.forceRefresh = false});
 }
 
 class FetchClientLocationEvent extends ClientListEvent {
