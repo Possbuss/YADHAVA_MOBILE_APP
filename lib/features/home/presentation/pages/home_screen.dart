@@ -1,14 +1,11 @@
 //import 'dart:ffi';
+import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:Yadhava/features/auth/data/login_model.dart';
 import 'package:Yadhava/features/auth/domain/login_repo.dart';
-import 'package:Yadhava/features/home/presentation/bloc/cash_credit_summery/cash_credit_summery_bloc.dart';
-import 'package:Yadhava/features/home/presentation/bloc/cash_summery/cash_summery_bloc.dart';
-import 'package:Yadhava/features/home/presentation/bloc/credit_summery/credit_summery_bloc.dart';
 import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
-import 'package:Yadhava/features/home/presentation/bloc/sales_summery/sales_summery_bloc.dart';
-import 'package:Yadhava/features/home/presentation/bloc/stockList_bloc/stock_list_bloc.dart';
-import 'package:Yadhava/features/home/presentation/bloc/totalSales_bloc/bloc/total_sales_bloc.dart';
 import 'package:Yadhava/features/home/presentation/pages/widgets/cashCreditTableRow.dart';
 import 'package:Yadhava/features/home/presentation/pages/widgets/HomeAppbar.dart';
 import 'package:Yadhava/features/home/presentation/pages/widgets/cashCreditTableHeader.dart';
@@ -25,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/color.dart';
 import '../../../../core/constants/textthemes.dart';
 import '../../../../core/util/local_db_helper.dart';
@@ -33,9 +31,10 @@ import '../../../customer/presentation/bloc/last_invoice_bloc/lastinvoice_bloc.d
 import '../../../customer/presentation/pages/customer_details/bloc/add_item_bloc.dart';
 import '../../../customer/presentation/pages/customer_view/active_client_view.dart';
 import '../../../customer/presentation/pages/customer_view/inactive_client_view.dart';
-
-
-
+import '../../../customer/presentation/pages/customer_view/route_map/route_map_page.dart';
+import '../../../profile/data/mobile_app_user_profile.dart';
+import '../../../profile/domain/mobile_app_user_profile_repo.dart';
+import '../../../profile/presentation/pages/edit_profile_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,17 +51,21 @@ class _HomeScreenState extends State<HomeScreen> {
   int routeId = 0;
   int activeCount = 0;
   int inactiveCount = 0;
+  String profileImagePath = '';
+  String profileImageValue = '';
 
   GetLoginRepo loginRepo = GetLoginRepo();
+  final MobileAppUserProfileRepo _profileRepo = MobileAppUserProfileRepo();
   @override
   initState() {
     super.initState();
     DateTime now = DateTime.now();
     String formattedDate = DateFormat("yyyy-MM-dd").format(now).toUpperCase();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-
-      if(await getLoginResponse()){
+      if (await getLoginResponse()) {
         await _loadClientCounts();
+        await _loadStoredProfile();
+        if (!mounted) return;
 
         context.read<HomeBloc>().add(HomeGetEvent(formattedDate));
         context.read<LastInvoiceBloc>().add(FetchLastInvoice(0));
@@ -72,12 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
             .read<InvoiceBloc>()
             .add(FetchInvoiceAllEvent(companyId: companyId, routeId: routeId));
 
-
-        context.read<LastInvoiceBloc>()
-        .add(SyncLastInvoices(0));
+        context.read<LastInvoiceBloc>().add(SyncLastInvoices(0));
       }
-
-
     });
     // getLoginResponse();
     // context.read<TotalSalesBloc>().add(const TotalSalesGetEvent());
@@ -97,7 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> getLoginResponse() async {
     LoginModel? response = await loginRepo.getUserLoginResponse();
-    print(response!.userName);
+    if (response == null) {
+      return false;
+    }
+    if (!mounted) {
+      return false;
+    }
     setState(() {
       userName = response.userName;
       vehicleId = response.vehicleId;
@@ -109,15 +113,109 @@ class _HomeScreenState extends State<HomeScreen> {
     return true;
   }
 
+  Future<void> _loadStoredProfile() async {
+    final MobileAppUserProfile? profile = await _profileRepo.getProfile();
+    if (!mounted || profile == null) {
+      return;
+    }
+
+    setState(() {
+      userName = profile.name.isNotEmpty ? profile.name : profile.userName;
+      profileImagePath = profile.localImagePath;
+      profileImageValue = profile.employeeImage;
+    });
+  }
+
+  Future<void> _openEditProfile() async {
+    final MobileAppUserProfile? profile = await _profileRepo.getProfile();
+    if (!mounted || profile == null) {
+      return;
+    }
+
+    Navigator.pop(context);
+    final MobileAppUserProfile? updatedProfile =
+        await Navigator.push<MobileAppUserProfile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(initialProfile: profile),
+      ),
+    );
+
+    if (!mounted || updatedProfile == null) {
+      return;
+    }
+
+    setState(() {
+      userName = updatedProfile.name.isNotEmpty
+          ? updatedProfile.name
+          : updatedProfile.userName;
+      profileImagePath = updatedProfile.localImagePath;
+      profileImageValue = updatedProfile.employeeImage;
+    });
+  }
+
+  ImageProvider<Object>? _profileImageProvider() {
+    if (profileImagePath.isNotEmpty) {
+      return FileImage(File(profileImagePath));
+    }
+
+    final Uint8List? bytes = _tryDecodeBase64Image(profileImageValue);
+    if (bytes != null) {
+      return MemoryImage(bytes);
+    }
+
+    final String imageUrl = _resolveImageUrl(profileImageValue);
+    if (imageUrl.isNotEmpty) {
+      return NetworkImage(imageUrl);
+    }
+
+    return null;
+  }
+
+  Uint8List? _tryDecodeBase64Image(String value) {
+    if (value.trim().isEmpty) {
+      return null;
+    }
+
+    final String normalizedValue =
+        value.contains(',') ? value.substring(value.indexOf(',') + 1) : value;
+
+    try {
+      return base64Decode(normalizedValue);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _resolveImageUrl(String value) {
+    final String trimmedValue = value.trim();
+    if (trimmedValue.isEmpty) {
+      return '';
+    }
+
+    if (trimmedValue.startsWith('http://') ||
+        trimmedValue.startsWith('https://')) {
+      return trimmedValue;
+    }
+
+    final String normalizedBaseUrl = ApiConstants.baseUrl.endsWith('/')
+        ? ApiConstants.baseUrl
+        : '${ApiConstants.baseUrl}/';
+    final String normalizedPath =
+        trimmedValue.startsWith('/') ? trimmedValue.substring(1) : trimmedValue;
+    return '$normalizedBaseUrl$normalizedPath';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final ImageProvider<Object>? profileImageProvider = _profileImageProvider();
+
     return DefaultTabController(
       length: 5,
       child: Scaffold(
         appBar: HomeAppBar(
           userName: userName,
         ),
-
         drawer: Drawer(
           backgroundColor: Colour.pContainerBlack,
           child: SafeArea(
@@ -126,7 +224,8 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // 🧑 User Header
                 UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(color: Colour.pContainerBlack),
+                  decoration:
+                      const BoxDecoration(color: Colour.pContainerBlack),
                   accountName: Text(
                     userName,
                     style: const TextStyle(color: Colors.white),
@@ -135,15 +234,50 @@ class _HomeScreenState extends State<HomeScreen> {
                     "Welcome back!",
                     style: TextStyle(color: Colors.white70),
                   ),
-                  currentAccountPicture: const CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 35, color: Colors.blueAccent),
+                  currentAccountPicture: GestureDetector(
+                    onTap: _openEditProfile,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      backgroundImage: profileImageProvider,
+                      child: profileImageProvider == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 35,
+                              color: Colors.blueAccent,
+                            )
+                          : null,
+                    ),
                   ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Colors.white),
+                  title: const Text(
+                    "Edit Profile",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: _openEditProfile,
+                ),
+                ListTile(
+                  leading: const Icon(Icons.alt_route, color: Colors.white),
+                  title: const Text(
+                    "Client Route Map",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RouteMapPage(),
+                      ),
+                    );
+                  },
                 ),
 
                 // 📊 Customer Summary
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Text(
                     "Customer Summary",
                     style: TextStyle(
@@ -238,13 +372,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 //   ),
                 // ),
 
-
                 const Spacer(), // ✅ Pushes logout to the bottom
 
                 // 🚪 Logout
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text("Logout", style: TextStyle(color: Colors.white)),
+                  title: const Text("Logout",
+                      style: TextStyle(color: Colors.white)),
                   onTap: () {
                     Navigator.pop(context);
                     // TODO: handle logout
@@ -254,8 +388,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-
-
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -276,7 +408,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   labelStyle: AppTextThemes.h7,
                   isScrollable: true,
                   tabs: [
-
                     Tab(
                       text: "Collection Details",
                     ),
@@ -328,7 +459,6 @@ Widget salesSummery() {
 }
 
 Widget creditSummery() {
-  print('CREDIT');
   return Column(
     children: [const CreditTableHeader(), const creditTableRow()],
   );

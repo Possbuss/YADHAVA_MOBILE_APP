@@ -7,8 +7,14 @@ sion="1.0">
     <string>We need access to your location to show the address.</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>We need access to your location even when the app is in the background.</string>
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>We need access to your location at all times.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access so you can capture a client profile picture.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need photo library access so you can choose a client profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We may save captured client profile pictures to your photo library.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

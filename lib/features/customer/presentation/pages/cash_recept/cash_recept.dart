@@ -216,24 +216,20 @@
 // }
 
 import 'package:Yadhava/core/constants/color.dart';
-import 'package:Yadhava/features/customer/presentation/pages/cash_recept/widgets/cassh_recept_serachbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../auth/data/login_model.dart';
 import '../../../../auth/domain/login_repo.dart';
-import '../../../model/cash_receipt_model.dart';
 import '../../bloc/cash_recipt_bloc/cash_receipt_bloc.dart';
 
-// Your custom widgets:
-import 'widgets/header.dart';
 import 'widgets/receipt_list.dart';
 import 'create_cashreceipt.dart';
 
 class CashRecept extends StatefulWidget {
   final int? clientId;
-  const CashRecept({Key? key, this.clientId}) : super(key: key);
+  const CashRecept({super.key, this.clientId});
 
   @override
   State<CashRecept> createState() => _CashReceptState();
@@ -268,15 +264,29 @@ class _CashReceptState extends State<CashRecept> {
     };
 
     // Trigger your bloc to fetch data
-    context.read<CashReceiptBloc>().add(CashReceiptGetEvent(receiptData,widget.clientId ?? 0));
+    if (!mounted) {
+      return;
+    }
+    context
+        .read<CashReceiptBloc>()
+        .add(CashReceiptGetEvent(receiptData, widget.clientId ?? 0));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colour.pBackgroundBlack,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Cash Receipt'),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
@@ -306,17 +316,12 @@ class _CashReceptState extends State<CashRecept> {
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 50),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                                child: CashReceiptSectionHeader(
-                                    title: "Cash Receipt"),
-                              ),
                               Expanded(
                                 child: ReceiptList(
-                                    receipts: state.response,
-                                    clientId: widget.clientId,
-                                onVoucherUpdated: () => postData(),),
+                                  receipts: state.response,
+                                  clientId: widget.clientId,
+                                  onVoucherUpdated: () => postData(),
+                                ),
                               ),
                             ],
                           )

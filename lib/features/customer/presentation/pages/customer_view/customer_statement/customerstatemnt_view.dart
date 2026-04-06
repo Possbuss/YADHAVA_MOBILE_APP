@@ -11,16 +11,13 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../../../../../core/constants/color.dart';
 import '../../../../domain/voucher_repo.dart';
 import '../../../../model/statementModel.dart';
-import 'package:flutter/services.dart';
-import 'dart:io';
-
 
 class CustomerStatement extends StatefulWidget {
-  final acId;
+  final dynamic acId;
   final String fromdate;
   final String enddate;
-  final companyId;
-  final String client_name;
+  final dynamic companyId;
+  final String clientName;
 
   const CustomerStatement({
     super.key,
@@ -28,11 +25,11 @@ class CustomerStatement extends StatefulWidget {
     required this.fromdate,
     required this.enddate,
     this.companyId,
-    required this.client_name,
+    required this.clientName,
   });
 
   @override
-  _CustomerStatementState createState() => _CustomerStatementState();
+  State<CustomerStatement> createState() => _CustomerStatementState();
 }
 
 class _CustomerStatementState extends State<CustomerStatement> {
@@ -51,18 +48,16 @@ class _CustomerStatementState extends State<CustomerStatement> {
     try {
       List<Voucher> vouchers = await _voucherRepo.getInvoices(
           widget.acId, widget.fromdate, widget.enddate, widget.companyId);
-      print(vouchers.length);
       setState(() {
         _vouchers = List.from(vouchers);
       });
-      print(_vouchers.length);
 
       totalDebit = 0;
       totalCredit = 0;
 
       for (var voucher in _vouchers) {
-        totalDebit += voucher.lcDebit ?? 0;
-        totalCredit += voucher.lcCredit ?? 0;
+        totalDebit += voucher.lcDebit;
+        totalCredit += voucher.lcCredit;
       }
     } catch (e) {
       debugPrint("Error fetching vouchers: $e");
@@ -91,10 +86,12 @@ class _CustomerStatementState extends State<CustomerStatement> {
               child: IconButton(
                 onPressed: () async {
                   try {
-                    final pdfFile =
-                        await _generateTablePdf(widget.client_name, context);
+                    final pdfFile = await _generateTablePdf(widget.clientName);
                     await openPdf(pdfFile);
                   } catch (e) {
+                    if (!context.mounted) {
+                      return;
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text("Error generating or opening PDF: $e"),
@@ -139,7 +136,7 @@ class _CustomerStatementState extends State<CustomerStatement> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      " Ledger : ${widget.client_name}",
+                                      " Ledger : ${widget.clientName}",
                                       style: const TextStyle(
                                         color:
                                             Color.fromARGB(255, 34, 101, 224),
@@ -192,19 +189,20 @@ class _CustomerStatementState extends State<CustomerStatement> {
                             _buildTableHeader(),
                             Column(
                               children: _vouchers
-                                  .where((v) => (v.lcDebit ?? 0) != 0 || (v.lcCredit ?? 0) != 0)
+                                  .where(
+                                      (v) => v.lcDebit != 0 || v.lcCredit != 0)
                                   .map((v) => _buildTableRow(
-                                index: (_vouchers.indexOf(v) ).toString(),
-                                date: v.voucherDate ?? "",
-                                particular: v.accountName ?? "",
-                                vouchertype: v.voucherTypeName ?? "",
-                                voucherno: v.voucherNo ?? "",
-                                debit: v.lcDebit?.toString() ?? "0",
-                                credit: v.lcCredit?.toString() ?? "0",
-                              ))
+                                        index:
+                                            (_vouchers.indexOf(v)).toString(),
+                                        date: v.voucherDate,
+                                        particular: v.accountName,
+                                        vouchertype: v.voucherTypeName ?? "",
+                                        voucherno: v.voucherNo,
+                                        debit: v.lcDebit.toString(),
+                                        credit: v.lcCredit.toString(),
+                                      ))
                                   .toList(), // Ensure it is a List<Widget>
                             ),
-
 
                             // for (int i = 0; i < _vouchers.length; i++)
                             //   _buildTableRow(
@@ -397,61 +395,198 @@ class _CustomerStatementState extends State<CustomerStatement> {
     );
   }
 
-  Future<File> _generateTablePdf(String clientName, context) async {
+  Future<File> _generateTablePdf(String clientName) async {
     final pdf = pw.Document();
+    final List<Voucher> printableVouchers =
+        _vouchers.where((v) => v.lcDebit != 0 || v.lcCredit != 0).toList();
+    final String generatedOn =
+        DateFormat('dd-MMM-yyyy hh:mm a').format(DateTime.now());
+    final String closingBalance = (totalDebit - totalCredit).toStringAsFixed(2);
 
-    // Define the number of items per page
-    const itemsPerPage = 25;
-
-    // Split the vouchers into chunks
-    final chunks = _splitListIntoChunks(_vouchers, itemsPerPage);
-
-    // Track the starting index for each page
-    int globalIndex = 1;
-
-    // Loop through each chunk and add a new page
-    for (var chunk in chunks) {
-      pdf.addPage(
-        pw.Page(
-          build: (context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // Header Section
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      "Ledger: $clientName",
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 10,
-                      ),
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.fromLTRB(24, 24, 24, 20),
+        header: (context) => _buildPdfReportHeader(
+          clientName: clientName,
+          generatedOn: generatedOn,
+          entryCount: printableVouchers.length,
+          closingBalance: closingBalance,
+        ),
+        footer: (context) => _buildPdfReportFooter(context),
+        build: (context) => [
+          pw.Table(
+            border: pw.TableBorder(
+              top: const pw.BorderSide(color: PdfColors.grey600, width: 0.7),
+              bottom: const pw.BorderSide(color: PdfColors.grey600, width: 0.7),
+              left: const pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+              right: const pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+              horizontalInside:
+                  const pw.BorderSide(color: PdfColors.grey300, width: 0.35),
+              verticalInside:
+                  const pw.BorderSide(color: PdfColors.grey300, width: 0.35),
+            ),
+            columnWidths: <int, pw.TableColumnWidth>{
+              0: const pw.FlexColumnWidth(0.7),
+              1: const pw.FlexColumnWidth(1.45),
+              2: const pw.FlexColumnWidth(2.6),
+              3: const pw.FlexColumnWidth(1.95),
+              4: const pw.FlexColumnWidth(1.7),
+              5: const pw.FlexColumnWidth(1.25),
+              6: const pw.FlexColumnWidth(1.25),
+            },
+            children: [
+              pw.TableRow(
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#E5E7EB'),
+                ),
+                children: [
+                  _buildPdfHeaderBox('#'),
+                  _buildPdfHeaderBox('Voucher Date'),
+                  _buildPdfHeaderBox('Particulars'),
+                  _buildPdfHeaderBox('Voucher Type'),
+                  _buildPdfHeaderBox('Voucher No'),
+                  _buildPdfHeaderBox('Debit'),
+                  _buildPdfHeaderBox('Credit'),
+                ],
+              ),
+              ...List<pw.TableRow>.generate(
+                printableVouchers.length,
+                (index) {
+                  final voucher = printableVouchers[index];
+                  final bool alternate = index.isOdd;
+                  return pw.TableRow(
+                    decoration: pw.BoxDecoration(
+                      color: alternate
+                          ? PdfColor.fromHex('#FAFAFA')
+                          : PdfColors.white,
                     ),
-                    pw.Container(
-                      width: 150,
-                      height: 40,
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(),
-                        borderRadius: pw.BorderRadius.circular(10),
+                    children: [
+                      _buildPdfBodyBox(
+                        '${index + 1}',
+                        align: pw.TextAlign.center,
                       ),
-                      padding: const pw.EdgeInsets.all(8),
+                      _buildPdfBodyBox(_formatVoucherDate(voucher.voucherDate)),
+                      _buildPdfBodyBox(voucher.accountName),
+                      _buildPdfBodyBox(voucher.voucherTypeName ?? '-'),
+                      _buildPdfBodyBox(voucher.voucherNo),
+                      _buildPdfBodyBox(
+                        _formatAmount(voucher.lcDebit),
+                        align: pw.TextAlign.right,
+                      ),
+                      _buildPdfBodyBox(
+                        _formatAmount(voucher.lcCredit),
+                        align: pw.TextAlign.right,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 16),
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                flex: 3,
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(12),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColor.fromHex('#F9FAFB'),
+                    borderRadius: pw.BorderRadius.circular(8),
+                    border: pw.Border.all(
+                      color: PdfColors.grey400,
+                      width: 0.6,
+                    ),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'Statement Notes',
+                        style: pw.TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.SizedBox(height: 6),
+                      pw.Text(
+                        'This statement summarizes all debit and credit entries posted to the selected client ledger within the specified period.',
+                        style: pw.TextStyle(
+                          fontSize: 8.5,
+                          color: PdfColors.grey700,
+                          lineSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              pw.SizedBox(width: 12),
+              pw.Expanded(
+                flex: 2,
+                child: pw.Column(
+                  children: [
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.all(12),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromHex('#F3F4F6'),
+                        borderRadius: pw.BorderRadius.circular(8),
+                        border: pw.Border.all(
+                          color: PdfColors.grey500,
+                          width: 0.6,
+                        ),
+                      ),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        mainAxisAlignment: pw.MainAxisAlignment.center,
                         children: [
                           pw.Text(
-                            "From Date #: ${widget.fromdate}",
+                            'Transaction Totals',
                             style: pw.TextStyle(
+                              fontSize: 10.5,
                               fontWeight: pw.FontWeight.bold,
-                              fontSize: 8,
                             ),
                           ),
+                          pw.SizedBox(height: 8),
+                          _buildPdfTotalLine(
+                            'Debit Total',
+                            totalDebit.toStringAsFixed(2),
+                          ),
+                          pw.SizedBox(height: 4),
+                          _buildPdfTotalLine(
+                            'Credit Total',
+                            totalCredit.toStringAsFixed(2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.all(12),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromHex('#111827'),
+                        borderRadius: pw.BorderRadius.circular(8),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
                           pw.Text(
-                            "To Date #: ${widget.enddate}",
+                            'Closing Balance As On ${widget.enddate}',
                             style: pw.TextStyle(
+                              fontSize: 9.5,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                          pw.SizedBox(height: 6),
+                          pw.Text(
+                            closingBalance,
+                            style: pw.TextStyle(
+                              fontSize: 14,
                               fontWeight: pw.FontWeight.bold,
-                              fontSize: 8,
+                              color: PdfColors.white,
                             ),
                           ),
                         ],
@@ -459,190 +594,327 @@ class _CustomerStatementState extends State<CustomerStatement> {
                     ),
                   ],
                 ),
-                pw.SizedBox(height: 20),
-
-                // Table Header
-                pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(
-                      vertical: 8, horizontal: 10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(),
-                    borderRadius: pw.BorderRadius.circular(8),
-                  ),
-                  child: pw.Row(
-                    children: [
-                      _buildPdfHeaderCell("#", flex: 1),
-                      _buildPdfHeaderCell("VoucherDate", flex: 2),
-                      _buildPdfHeaderCell("Particulars", flex: 3),
-                      _buildPdfHeaderCell("VoucherType", flex: 2),
-                      _buildPdfHeaderCell("VoucherNo", flex: 2),
-                      _buildPdfHeaderCell("Debit", flex: 2),
-                      _buildPdfHeaderCell("Credit", flex: 2),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-
-                // Table Rows for the current chunk
-                for (int i = 0; i < chunk.length; i++)
-                  _buildPdfTableRow(
-                    index: (globalIndex++).toString(),
-                    date: chunk[i].voucherDate ?? "",
-                    particular: chunk[i].accountName ?? "",
-                    vouchertype: chunk[i].voucherTypeName ?? "",
-                    voucherno: chunk[i].voucherNo ?? "",
-                    debit: chunk[i].lcDebit.toString() ?? "0",
-                    credit: chunk[i].lcCredit.toString() ?? "0",
-                  ),
-                pw.Divider(thickness: 0.7, color: PdfColors.black),
-                // Add totals to the last page
-                if (chunks.indexOf(chunk) == chunks.length - 1) ...[
-                  pw.SizedBox(height: 20),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.SizedBox(),
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
-                        children: [
-                          pw.Text(
-                            "Transaction Totals #  ",
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 8,
-                            ),
-                          ),
-                          pw.Text(
-                            "Debit Total: ${totalDebit.toStringAsFixed(2)}  ",
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 8,
-                            ),
-                          ),
-                          pw.Text(
-                            "Credit Total: ${totalCredit.toStringAsFixed(2)}",
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 8,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  pw.SizedBox(height: 10),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.SizedBox(),
-                      pw.Container(
-                        width: 420,
-                        height: 50,
-                        decoration: pw.BoxDecoration(
-                          borderRadius: pw.BorderRadius.circular(10),
-                          border: pw.Border.all(color: PdfColors.black),
-                        ),
-                        child: pw.Padding(
-                          padding: const pw.EdgeInsets.all(8.0),
-                          child: pw.Row(
-                            crossAxisAlignment: pw.CrossAxisAlignment.center,
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                            children: [
-                              pw.Text(
-                                "Closing Balance As On ${widget.enddate} ",
-                                style: pw.TextStyle(
-                                  //2 color: pw. Colour.pBackgroundBlack,
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 10,
-                                ),
-                              ),
-                              pw.Text(
-                                "Total Amount: ${(totalDebit - totalCredit).toStringAsFixed(2)}",
-                                style: pw.TextStyle(
-                                  decoration: pw.TextDecoration.underline,
-                                  // color: Colour.pBackgroundBlack,
-                                  fontWeight: pw.FontWeight.bold,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ],
-            );
-          },
-        ),
-      );
-    }
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
 
     // Save the PDF
     final now = DateTime.now();
     final formattedDate = DateFormat('yyyyMMdd_HHmm').format(now);
     return savePdfs(
-        name: "Statement_${widget.client_name}_$formattedDate", pdf: pdf);
+        name: "Statement_${widget.clientName}_$formattedDate", pdf: pdf);
   }
 
-  List<List<Voucher>> _splitListIntoChunks(List<Voucher> list, int chunkSize) {
-    List<List<Voucher>> chunks = [];
-    for (var i = 0; i < list.length; i += chunkSize) {
-      chunks.add(list.sublist(
-          i, i + chunkSize > list.length ? list.length : i + chunkSize));
-    }
-    return chunks;
-  }
-
-  pw.Expanded _buildPdfHeaderCell(String text, {int flex = 1}) {
-    return pw.Expanded(
-      flex: flex,
+  pw.Widget _buildPdfHeaderBox(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 7),
       child: pw.Text(
         text,
-        style: pw.TextStyle(
-          fontWeight: pw.FontWeight.bold,
-          fontSize: 8,
-        ),
         textAlign: pw.TextAlign.center,
+        style: pw.TextStyle(
+          fontSize: 8.8,
+          fontWeight: pw.FontWeight.bold,
+        ),
       ),
     );
   }
 
-  pw.Container _buildPdfTableRow({
-    required String index,
-    required String date,
-    required String particular,
-    required String vouchertype,
-    required String voucherno,
-    required String debit,
-    required String credit,
+  pw.Widget _buildPdfBodyBox(
+    String text, {
+    pw.TextAlign align = pw.TextAlign.left,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+      child: pw.Text(
+        text,
+        textAlign: align,
+        style: const pw.TextStyle(fontSize: 8.4, lineSpacing: 1.8),
+      ),
+    );
+  }
+
+  pw.Widget _buildPdfReportHeader({
+    required String clientName,
+    required String generatedOn,
+    required int entryCount,
+    required String closingBalance,
   }) {
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 18),
-      child: pw.Row(
+      margin: const pw.EdgeInsets.only(bottom: 16),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          _buildPdfCell(index, flex: 1),
-          _buildPdfCell(date, flex: 2),
-          _buildPdfCell(particular, flex: 3),
-          _buildPdfCell(vouchertype, flex: 2),
-          _buildPdfCell(voucherno, flex: 2),
-          _buildPdfCell(debit, flex: 2),
-          _buildPdfCell(credit, flex: 2),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(14),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#F3F4F6'),
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.grey400, width: 0.8),
+            ),
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Expanded(
+                  flex: 3,
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'ACCOUNT STATEMENT',
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Client Ledger Report',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 12),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.white,
+                          borderRadius: pw.BorderRadius.circular(6),
+                          border: pw.Border.all(
+                            color: PdfColors.grey400,
+                            width: 0.6,
+                          ),
+                        ),
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              'Ledger Name',
+                              style: pw.TextStyle(
+                                fontSize: 8,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                            pw.SizedBox(height: 3),
+                            pw.Text(
+                              clientName,
+                              style: pw.TextStyle(
+                                fontSize: 11,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(width: 16),
+                pw.Expanded(
+                  flex: 2,
+                  child: pw.Column(
+                    children: [
+                      pw.Row(
+                        children: [
+                          pw.Expanded(
+                            child: _buildPdfSummaryCard(
+                              title: 'From Date',
+                              value: widget.fromdate,
+                            ),
+                          ),
+                          pw.SizedBox(width: 8),
+                          pw.Expanded(
+                            child: _buildPdfSummaryCard(
+                              title: 'To Date',
+                              value: widget.enddate,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 8),
+                      _buildPdfSummaryCard(
+                        title: 'Generated On',
+                        value: generatedOn,
+                        fullWidth: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            padding:
+                const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#FAFAFA'),
+              borderRadius: pw.BorderRadius.circular(6),
+              border: pw.Border.all(color: PdfColors.grey400, width: 0.6),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                _buildPdfMiniStat(
+                  label: 'Entries',
+                  value: entryCount.toString(),
+                ),
+                _buildPdfMiniStat(
+                  label: 'Debit Total',
+                  value: totalDebit.toStringAsFixed(2),
+                ),
+                _buildPdfMiniStat(
+                  label: 'Credit Total',
+                  value: totalCredit.toStringAsFixed(2),
+                ),
+                _buildPdfMiniStat(
+                  label: 'Closing Balance',
+                  value: closingBalance,
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            height: 2,
+            color: PdfColor.fromHex('#1F2937'),
+          ),
         ],
       ),
     );
   }
 
-  pw.Expanded _buildPdfCell(String text, {int flex = 1}) {
-    return pw.Expanded(
-      flex: flex,
-      child: pw.Text(
-        text,
-        style: const pw.TextStyle(fontSize: 8),
-        textAlign: pw.TextAlign.center,
+  pw.Widget _buildPdfReportFooter(pw.Context context) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(top: 10),
+      padding: const pw.EdgeInsets.only(top: 6),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColors.grey400, width: 0.6),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            'Statement Period: ${widget.fromdate} to ${widget.enddate}',
+            style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700),
+          ),
+          pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700),
+          ),
+        ],
       ),
     );
+  }
+
+  pw.Widget _buildPdfSummaryCard({
+    required String title,
+    required String value,
+    bool fullWidth = false,
+  }) {
+    return pw.Container(
+      width: fullWidth ? double.infinity : null,
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: pw.BorderRadius.circular(6),
+        border: pw.Border.all(color: PdfColors.grey400, width: 0.6),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 8,
+              color: PdfColors.grey700,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 9.5,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPdfMiniStat({
+    required String label,
+    required String value,
+  }) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            fontSize: 7.5,
+            color: PdfColors.grey700,
+          ),
+        ),
+        pw.SizedBox(height: 3),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 9.5,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPdfTotalLine(String label, String value) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 9),
+        ),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 9.5,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatVoucherDate(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '-';
+    }
+
+    try {
+      final DateTime date = DateTime.parse(value);
+      return DateFormat('dd-MMM-yyyy').format(date);
+    } catch (_) {
+      return value;
+    }
+  }
+
+  String _formatAmount(double? value) {
+    if (value == null || value == 0) {
+      return '0.00';
+    }
+    return value.toStringAsFixed(2);
   }
 
   Future<File> savePdfs({

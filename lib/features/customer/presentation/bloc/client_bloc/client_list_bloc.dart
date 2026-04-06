@@ -18,8 +18,10 @@ part 'client_list_state.dart';
 class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   final GetClientListRepo clientListRepo;
   List<ClientModel> _allClients = []; // Store the full client list
-  List<ClientActiveInActiveModel> _allClientsActive = []; // Store the full client list
-  List<ClientActiveInActiveModel> _allClientsInActive = []; // Store the full client list
+  List<ClientActiveInActiveModel> _allClientsActive =
+      []; // Store the full client list
+  List<ClientActiveInActiveModel> _allClientsInActive =
+      []; // Store the full client list
 
   ClientListBloc(this.clientListRepo) : super(ClientListInitial()) {
     on<ClientListGetEvent>(_onGetClientListEvent);
@@ -32,9 +34,9 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   }
 
   Future<void> _onGetActiveClientList(
-      GetActiveClientListEvent event,
-      Emitter<ClientListState> emit,
-      ) async {
+    GetActiveClientListEvent event,
+    Emitter<ClientListState> emit,
+  ) async {
     emit(ClientListActiveLoading());
     try {
       final db = LocalDbHelper();
@@ -52,42 +54,42 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         }
       }
 
-      final response = await clientListRepo.getClientListActive(loginModel?.companyId,loginModel?.routeId ?? 0,0);
+      final response = await clientListRepo.getClientListActive(
+          loginModel?.companyId, loginModel?.routeId ?? 0, 0);
       if (response != null &&
           (response.statusCode == 200 || response.statusCode == 201)) {
         final data = response.data as List<dynamic>;
-        final clients = data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
+        final clients =
+            data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
 
         await db.clearActiveClient();
         await db.insertActiveClients(clients);
 
         _allClientsActive = clients;
-        emit(
-            ClientListActiveLoaded(clientList: clients, locations: const {}));
+        emit(ClientListActiveLoaded(clientList: clients, locations: const {}));
       } else {
         emit(ClientListError(
             message:
-            'Failed to fetch company data. Status code: ${response?.statusCode}'));
+                'Failed to fetch company data. Status code: ${response?.statusCode}'));
       }
-
     } catch (ex) {
       emit(ClientListError(message: 'An error occurred: ${ex.toString()}'));
     }
   }
 
   Future<void> _onGetInActiveClientList(
-      GetInActiveClientListEvent event,
-      Emitter<ClientListState> emit,
-      ) async {
+    GetInActiveClientListEvent event,
+    Emitter<ClientListState> emit,
+  ) async {
     emit(ClientListInActiveLoading());
     try {
-
       final db = LocalDbHelper();
       GetLoginRepo loginRepo = GetLoginRepo();
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
 
       if (!event.forceRefresh) {
-        final isLocalEmpty = await db.isEmptyInActiveClients(loginModel?.routeId);
+        final isLocalEmpty =
+            await db.isEmptyInActiveClients(loginModel?.routeId);
         if (!isLocalEmpty) {
           final localClients = await db.getInActiveClients(loginModel?.routeId);
           _allClientsInActive = localClients;
@@ -97,11 +99,13 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         }
       }
 
-      final response = await clientListRepo.getClientListInActive(loginModel?.companyId,loginModel?.routeId ?? 0,0);
+      final response = await clientListRepo.getClientListInActive(
+          loginModel?.companyId, loginModel?.routeId ?? 0, 0);
       if (response != null &&
           (response.statusCode == 200 || response.statusCode == 201)) {
         final data = response.data as List<dynamic>;
-        final clients = data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
+        final clients =
+            data.map((e) => ClientActiveInActiveModel.fromJson(e)).toList();
 
         await db.clearInActiveClient();
         await db.insertInActiveClients(clients);
@@ -112,27 +116,25 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
       } else {
         emit(ClientListError(
             message:
-            'Failed to fetch company data. Status code: ${response?.statusCode}'));
+                'Failed to fetch company data. Status code: ${response?.statusCode}'));
       }
-
     } catch (ex) {
       emit(ClientListError(message: 'An error occurred: ${ex.toString()}'));
     }
   }
 
   Future<void> _onSyncClientListEvent(
-      SyncClientListEvent event,
-      Emitter<ClientListState> emit,
-      ) async {
+    SyncClientListEvent event,
+    Emitter<ClientListState> emit,
+  ) async {
     emit(ClientListLoading());
     try {
-
-
       final db = LocalDbHelper();
       GetLoginRepo loginRepo = GetLoginRepo();
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
 
-      final response = await clientListRepo.getClientListAllRepo(loginModel?.companyId,loginModel?.routeId ?? 0,0);
+      final response = await clientListRepo.getClientListAllRepo(
+          loginModel?.companyId, loginModel?.routeId ?? 0, 0);
       if (response != null &&
           (response.statusCode == 200 || response.statusCode == 201)) {
         final data = response.data as List<dynamic>;
@@ -143,14 +145,12 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         await db.updateClientSyncDateStamp(DateTime.now());
 
         _allClients = clients;
-        emit(
-            ClientListLoaded(clientList: clients, locations: const {}));
+        emit(ClientListLoaded(clientList: clients, locations: const {}));
       } else {
         emit(ClientListError(
             message:
-            'Failed to fetch company data. Status code: ${response?.statusCode}'));
+                'Failed to fetch company data. Status code: ${response?.statusCode}'));
       }
-
     } catch (ex) {
       emit(ClientListError(message: 'An error occurred: ${ex.toString()}'));
     }
@@ -162,23 +162,23 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   ) async {
     emit(ClientListLoading());
     try {
-
       GetLoginRepo loginRepo = GetLoginRepo();
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
 
-
       final db = LocalDbHelper();
-      bool isLocalEmpty = await db.isEmptyClients(loginModel?.routeId,loginModel?.companyId);
+      bool isLocalEmpty =
+          await db.isEmptyClients(loginModel?.routeId, loginModel?.companyId);
       print(isLocalEmpty);
 
-      if (!isLocalEmpty) {
-        final localClients = await db.getClients(loginModel?.routeId,loginModel?.companyId);
+      if (!event.forceRefresh && !isLocalEmpty) {
+        final localClients =
+            await db.getClients(loginModel?.routeId, loginModel?.companyId);
         _allClients = localClients;
         emit(ClientListLoaded(clientList: localClients, locations: const {}));
         return;
-      }
-      else{
-        final response = await clientListRepo.getClientListAllRepo(loginModel?.companyId,loginModel?.routeId ?? 0,0);
+      } else {
+        final response = await clientListRepo.getClientListAllRepo(
+            loginModel?.companyId, loginModel?.routeId ?? 0, 0);
         if (response != null &&
             (response.statusCode == 200 || response.statusCode == 201)) {
           final data = response.data as List<dynamic>;
@@ -189,12 +189,11 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
           await db.updateClientSyncDateStamp(DateTime.now());
 
           _allClients = clients;
-          emit(
-              ClientListLoaded(clientList: clients, locations: const {}));
+          emit(ClientListLoaded(clientList: clients, locations: const {}));
         } else {
           emit(ClientListError(
               message:
-              'Failed to fetch company data. Status code: ${response?.statusCode}'));
+                  'Failed to fetch company data. Status code: ${response?.statusCode}'));
         }
       }
     } catch (ex) {
@@ -217,7 +216,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
             (client.routeId?.toString() ?? '').contains(query) ||
             (client.amount?.toString() ?? '').contains(query) ||
             (client.mobile ?? '').contains(query) ||
-            (client.createdDate ?? '').contains(query)||
+            (client.createdDate ?? '').contains(query) ||
             (client.clientSortOrder ?? '').toString().contains(query);
       }).toList();
 
@@ -272,7 +271,6 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
     }
   }
 }
-
 
 // class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
 //   final GetClientListRepo clientListRepo;

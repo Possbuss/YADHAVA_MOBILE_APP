@@ -27,9 +27,9 @@ buildscript {
             includeGroup "org.jetbrains.kotlin"
             }
         }
-    }    
+    }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.6.0' // ✅ Upgrade this line
+        classpath 'com.android.tools.build:gradle:8.9.2'
     }
 }
 

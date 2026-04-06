@@ -7,13 +7,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/constants/color.dart';
 import '../../../../../core/constants/textthemes.dart';
-import '../../../../../core/widget/custom_snackbar.dart';
-import '../../../../home/data/stockStsModel.dart';
 import '../../../data/client_model.dart';
 import '../../bloc/last_invoice_bloc/lastinvoice_bloc.dart';
 import '../Invoice_pages/Invoice_page.dart';
 import '../cash_recept/cash_recept.dart';
 import '../customer_details/bloc/add_item_bloc.dart';
+import '../quotation/quotation_register_page.dart';
 import 'invoice_summery.dart';
 
 class SelectedItemList extends StatefulWidget {
@@ -148,6 +147,21 @@ class _SelectedItemListState extends State<SelectedItemList>
               },
               heroTag: "fab2",
               child: const Icon(Icons.receipt_long),
+            ),
+            const SizedBox(height: 10),
+            FloatingActionButton.small(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuotationRegisterPage(
+                      client: widget.client,
+                    ),
+                  ),
+                );
+              },
+              heroTag: "fabQuotation",
+              child: const Icon(Icons.request_quote_outlined),
             ),
             const SizedBox(height: 10),
           ],
@@ -371,7 +385,8 @@ class _SelectedItemListState extends State<SelectedItemList>
                             } else {
                               filteredItems = allItems
                                   .where((item) =>
-                                      item.productName.toString()
+                                      item.productName
+                                          .toString()
                                           .toLowerCase()
                                           .contains(value.toLowerCase()) ??
                                       false)
@@ -471,20 +486,39 @@ class _SelectedItemListState extends State<SelectedItemList>
                                               );
                                             } else {
                                               setState(() {
-                                                selectedProductIds.add(productId);
+                                                selectedProductIds
+                                                    .add(productId);
 
-                                                ProductItem selectedItem = ProductItem(
-                                                  fac: (item.foc as num?)?.toInt() ?? 0,
-                                                  srt: (item.srt as num?)?.toInt() ?? 0,
-                                                  productName: item.productName ?? '',
+                                                ProductItem selectedItem =
+                                                    ProductItem(
+                                                  fac: (item.foc as num?)
+                                                          ?.toInt() ??
+                                                      0,
+                                                  srt: (item.srt as num?)
+                                                          ?.toInt() ??
+                                                      0,
+                                                  productName:
+                                                      item.productName ?? '',
                                                   quantity: 1,
-                                                  sell: item.sellingPrice?.toString() ?? '0',
-                                                  totalRate: (item.sellingPrice as num?)?.toDouble() ?? 0.0,
+                                                  sell: item.sellingPrice
+                                                          ?.toString() ??
+                                                      '0',
+                                                  totalRate: (item.sellingPrice
+                                                              as num?)
+                                                          ?.toDouble() ??
+                                                      0.0,
                                                   uom: item.packingName ?? '',
-                                                  packingDescription: item.packingDescription ?? '',
-                                                  packingId: (item.packingId as num?)?.toInt() ?? 0,
-                                                  packingName: item.packingName ?? '',
-                                                  partNumber: item.partNumber ?? '',
+                                                  packingDescription:
+                                                      item.packingDescription ??
+                                                          '',
+                                                  packingId:
+                                                      (item.packingId as num?)
+                                                              ?.toInt() ??
+                                                          0,
+                                                  packingName:
+                                                      item.packingName ?? '',
+                                                  partNumber:
+                                                      item.partNumber ?? '',
                                                   productId: productId,
                                                 );
 

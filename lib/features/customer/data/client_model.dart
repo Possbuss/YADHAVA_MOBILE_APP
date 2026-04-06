@@ -1,5 +1,5 @@
 class ClientModel {
-  final int?companyId;
+  final int? companyId;
   final int? id;
   final String? name;
   final String? contactPersonName;
@@ -7,7 +7,7 @@ class ClientModel {
   final String? routeName;
   final double? amount;
   final String? mobile;
-  final int?  salesmanId;
+  final int? salesmanId;
   final String? salesmanName;
   final double? latitude;
   final double? longitude;
@@ -15,24 +15,28 @@ class ClientModel {
   final int? clientSortOrder;
   final String? isActive;
   final String? createdDate;
+  final String? profilePicUrl;
+  final String? localProfileImagePath;
 
   ClientModel({
-     this.companyId,
-     this.id,
-     this.name,
-     this.contactPersonName,
-     this.routeId,
-     this.routeName,
-     this.amount,
-     this.salesmanId,
-     this.salesmanName,
-     this.mobile,
+    this.companyId,
+    this.id,
+    this.name,
+    this.contactPersonName,
+    this.routeId,
+    this.routeName,
+    this.amount,
+    this.salesmanId,
+    this.salesmanName,
+    this.mobile,
     this.latitude,
     this.longitude,
     this.transactionYear,
     this.clientSortOrder,
     this.isActive,
-    this.createdDate
+    this.createdDate,
+    this.profilePicUrl,
+    this.localProfileImagePath,
   });
 
   // Factory method to create a Client from JSON
@@ -40,27 +44,33 @@ class ClientModel {
     return ClientModel(
       companyId: json['companyId'],
       id: json['id'],
-      name: json['name']??"",
-      contactPersonName: json['contactPersonName']??"",
+      name: json['name'] ?? "",
+      contactPersonName: json['contactPersonName'] ?? "",
       routeId: json['routeId'],
-      routeName: json['routeName']??"",
-      amount: (json['amount'] as num).toDouble()??0,
+      routeName: json['routeName'] ?? "",
+      amount: json['amount'] == null ? 0 : (json['amount'] as num).toDouble(),
       mobile: json['mobile'] ?? "",
-      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
-      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
-        clientSortOrder : json['clientSortOrder'],
+      latitude: json['latitude'] != null
+          ? (json['latitude'] as num).toDouble()
+          : null,
+      longitude: json['longitude'] != null
+          ? (json['longitude'] as num).toDouble()
+          : null,
+      clientSortOrder: json['clientSortOrder'],
       transactionYear: json['transactionYear'] ?? 0,
-        salesmanId: json['salesmanId'],
-        salesmanName: json['salesmanName'],
-        isActive: json['isActive'],
-        createdDate: json['createdDate']
+      salesmanId: json['salesmanId'],
+      salesmanName: json['salesmanName'],
+      isActive: json['isActive'],
+      createdDate: json['createdDate'],
+      profilePicUrl: _readProfilePicUrl(json),
+      localProfileImagePath: _readLocalProfileImagePath(json),
     );
   }
 
   // Method to convert a Client instance to JSON
   Map<String, dynamic> toJson() {
     return {
-      'companyId':companyId,
+      'companyId': companyId,
       'id': id,
       'name': name,
       'contactPersonName': contactPersonName,
@@ -68,32 +78,58 @@ class ClientModel {
       'routeName': routeName,
       'amount': amount,
       'mobile': mobile,
-      'salesmanId':salesmanId,
-      'salesmanName':salesmanName,
+      'salesmanId': salesmanId,
+      'salesmanName': salesmanName,
       'latitude': latitude,
       'longitude': longitude,
-      'transactionYear':transactionYear,
-      'clientSortOrder':clientSortOrder,
-      'isActive':isActive,
-      'createdDate':createdDate
+      'transactionYear': transactionYear,
+      'clientSortOrder': clientSortOrder,
+      'isActive': isActive,
+      'createdDate': createdDate,
+      'profilePicUrl': profilePicUrl,
+      'localProfileImagePath': localProfileImagePath,
     };
+  }
+
+  static String? _readLocalProfileImagePath(Map<String, dynamic> json) {
+    final value = json['localProfileImagePath'];
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return null;
+  }
+
+  static String? _readProfilePicUrl(Map<String, dynamic> json) {
+    const possibleKeys = [
+      'profilePicUrl',
+      'profilePictureUrl',
+      'clientProfilePicUrl',
+      'profilePic',
+      'profilePicture',
+      'photoUrl',
+      'imageUrl',
+      'imagePath',
+    ];
+
+    for (final key in possibleKeys) {
+      final value = json[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+
+    return null;
   }
 }
 
-
-
 class ClientRequestModel {
-  final int?companyId;
+  final int? companyId;
   final int? clientId;
   final int? routeId;
   final String? dateTime;
 
-  ClientRequestModel({
-    this.routeId,
-    this.clientId,
-    this.companyId,
-    this.dateTime
-  });
+  ClientRequestModel(
+      {this.routeId, this.clientId, this.companyId, this.dateTime});
 
   // Factory method to create a Client from JSON
   factory ClientRequestModel.fromJson(Map<String, dynamic> json) {
@@ -101,17 +137,16 @@ class ClientRequestModel {
         companyId: json['companyId'],
         clientId: json['clientId'],
         routeId: json['routeId'],
-        dateTime: json['dateTime']
-    );
+        dateTime: json['dateTime']);
   }
 
   // Method to convert a Client instance to JSON
   Map<String, dynamic> toJson() {
     return {
-      'companyId':companyId,
+      'companyId': companyId,
       'clientId': clientId,
       'routeId': routeId,
-      'dateTime':dateTime
+      'dateTime': dateTime
     };
   }
 }

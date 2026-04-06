@@ -1,6 +1,5 @@
-import 'dart:convert';
+import 'dart:io';
 
-import 'package:Yadhava/core/constants/color.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,9 +15,13 @@ class CustomerCard extends StatelessWidget {
   final double? latitude;
   final double? longitude;
   final String avatarUrl;
-  final Function() onTap1;
-  final Function() onTap2;
-  final Function() onTap3;
+  final String profileImageUrl;
+  final bool profileImageIsLocal;
+  final bool isUploadingImage;
+  final VoidCallback onTap1;
+  final VoidCallback onTap2;
+  final VoidCallback onTap3;
+  final VoidCallback onProfileTap;
   final String salesManName;
 
   const CustomerCard({
@@ -33,22 +36,29 @@ class CustomerCard extends StatelessWidget {
     required this.latitude,
     required this.longitude,
     required this.avatarUrl,
+    required this.profileImageUrl,
+    required this.profileImageIsLocal,
+    required this.isUploadingImage,
     super.key,
     required this.onTap1,
     required this.onTap2,
     required this.onTap3,
-    required this.salesManName
+    required this.onProfileTap,
+    required this.salesManName,
   });
 
   @override
   Widget build(BuildContext context) {
-    double height = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.width;
+    final double height = MediaQuery.of(context).size.height;
+    final double width = MediaQuery.of(context).size.width;
+
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(vertical: height * 0.01),
       padding: EdgeInsets.symmetric(
-          vertical: height * 0.015, horizontal: width * 0.015),
+        vertical: height * 0.015,
+        horizontal: width * 0.015,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
@@ -59,70 +69,42 @@ class CustomerCard extends StatelessWidget {
         ),
       ),
       child: Column(
-        spacing: 6,
         children: [
-          _buildHeader(width,context),
-          SizedBox(
-            height: height * 0.01,
+          _buildHeader(context),
+          SizedBox(height: height * 0.01),
+          _buildRow(
+            "assets/icon/Shop.png",
+            "$hotelName [ $createdDate ]",
+            width,
           ),
-          _buildRow("assets/icon/Shop.png",
-              //(hotelName +' '+(isActive + ' ['+createdDate+']')),
-              "$hotelName [ $createdDate ]",
-              width),
           GestureDetector(
-             onTap:onTap3,
-              child: _buildRow("assets/icon/Location.png", location, width)),
+            onTap: onTap3,
+            child: _buildRow("assets/icon/Location.png", location, width),
+          ),
           Visibility(
             visible: salesManName.isNotEmpty,
             child: _buildRow("assets/icon/Profile.png", salesManName, width),
           ),
           const Divider(color: Colors.white, thickness: 1),
           _buildBalanceRow(),
-          SizedBox(
-            height: height * 0.01,
-          ),
+          SizedBox(height: height * 0.01),
         ],
       ),
     );
   }
 
-
-  Widget _buildHeader(double width, BuildContext context) {
+  Widget _buildHeader(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 🟣 Avatar Circle
-        Container(
-          padding: const EdgeInsets.all(10.0),
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-          ),
-          child: Center(
-            child: Text(
-              avatarUrl.isNotEmpty
-                  ? avatarUrl.substring(0, 1).toUpperCase()
-                  : '?',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff703BF7),
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 8),
-
-        // 🧾 Name + Phone
+        _buildAvatar(),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "$name",
+                sortOrder == null ? name : "$name [$sortOrder]",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -145,349 +127,146 @@ class CustomerCard extends StatelessWidget {
             ],
           ),
         ),
-
-        const SizedBox(width: 6),
-
-        // 📍 Location Status
-        Visibility(
-          visible: latitude == 0.0 || longitude == 0.00,
-          child: Container(
-            decoration: BoxDecoration(
-              color: (latitude != 0.0 || longitude != 0.00)
-                  ? Colors.green
-                  : Colors.red,
-              shape: BoxShape.circle,
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 3,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
-              iconSize: 20,
-              onPressed: () {},
-              icon: const Icon(
-                Icons.location_off_outlined,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-
-        // 📞 Phone Call Icon
-        if (phoneNumber.isNotEmpty) ...[
+        if (latitude == 0.0 || longitude == 0.0) ...[
           const SizedBox(width: 6),
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 3,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
-              iconSize: 20,
-              onPressed: () => _makePhoneCall(phoneNumber),
-              icon: const Icon(
-                Icons.phone,
-                color: Colors.white,
-              ),
-            ),
+          _buildCircleAction(
+            color: Colors.red,
+            icon: Icons.location_off_outlined,
+            onPressed: () {},
           ),
         ],
-
+        if (phoneNumber.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          _buildCircleAction(
+            color: Colors.blue,
+            icon: Icons.phone,
+            onPressed: () => _makePhoneCall(phoneNumber),
+          ),
+        ],
         const SizedBox(width: 6),
-
-        // 🟢🔴 Status Bubble Icon
-        Container(
-          decoration: BoxDecoration(
-            color: isActive == 'Y' ? Colors.green : Colors.red,
-            shape: BoxShape.circle,
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 3,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-            iconSize: 20,
-            onPressed: onTap2,
-            icon: const Icon(
-              Icons.edit_outlined,
-              color: Colors.white,
-            ),
-          ),
+        _buildCircleAction(
+          color: isActive == 'Y' ? Colors.green : Colors.red,
+          icon: Icons.edit_outlined,
+          onPressed: onTap2,
         ),
       ],
     );
   }
 
-
-  Widget _buildHeaderQQQQQ(double width, BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // 🟣 Avatar Circle
-        Container(
-          padding: const EdgeInsets.all(10.0),
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-          ),
-          child: Center(
-            child: Text(
-              avatarUrl.isNotEmpty
-                  ? avatarUrl.substring(0, 1).toUpperCase()
-                  : '?',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff703BF7),
-              ),
-            ),
-          ),
+  Widget _buildAvatar() {
+    return GestureDetector(
+      onTap: onProfileTap,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
         ),
-
-        const SizedBox(width: 8),
-
-        // 🧾 Name + Phone (this will flex/shrink properly)
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+        child: ClipOval(
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Text(
-                "$name [$sortOrder]",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              if (phoneNumber.isNotEmpty)
-                Text(
-                  phoneNumber,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white70,
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        const SizedBox(width: 6),
-
-        Visibility(
-          visible: latitude == 0.0 || longitude == 0.00,
-          child: Container(
-            decoration: BoxDecoration(
-              color: (latitude != 0.0 || longitude != 0.00) ? Colors.green : Colors.red,
-              shape: BoxShape.circle,
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 3,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
-              iconSize: 20,
-              onPressed: () {
-              },
-              icon: const Icon(
-                Icons.location_off_outlined,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-
-
-        const SizedBox(width: 6),
-
-        // 🟢🔴 Status Bubble Icon
-        Container(
-          decoration: BoxDecoration(
-            color: isActive == 'Y' ? Colors.green : Colors.red,
-            shape: BoxShape.circle,
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 3,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-            iconSize: 20,
-            onPressed: onTap2,
-            icon: const Icon(
-              Icons.edit_outlined,
-              color: Colors.white,
-            ),
-          ),
-        ),
-
-
-      ],
-    );
-  }
-
-
-
-
-
-
-  Widget _buildHeader111(double width,BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-          ),
-          child: Center(
-            child: Text(
-              avatarUrl.isNotEmpty
-                  ? avatarUrl.substring(0, 1).toUpperCase()
-                  : '?', // fallback character
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff703BF7),
-              ),
-            ),
-          ),
-
-          // child: Center(
-          //     child: Text(
-          //   avatarUrl.substring(0, 1).toUpperCase(),
-          //   style: const TextStyle(
-          //       fontSize: 16,
-          //       fontWeight: FontWeight.bold,
-          //       color: Color(0xff703BF7)),
-          // )),
-        ),
-        SizedBox(width: width * 0.04),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                overflow: TextOverflow.ellipsis,
-                maxLines: 3,
-                "$name [$sortOrder]",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-
-
-              if (phoneNumber.isNotEmpty) ...[
-                const SizedBox(width: 6),
+              _buildAvatarImage(),
+              if (isUploadingImage)
                 Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 3,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                    iconSize: 20,
-                    onPressed: () {
-                      _makePhoneCall(phoneNumber);
-                    },
-                    icon: const Icon(
-                      Icons.phone,
+                  color: Colors.black26,
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
                       color: Colors.white,
                     ),
                   ),
                 ),
-              ],
-
             ],
           ),
         ),
-        SizedBox(width: 5,),
-        const Spacer(
-        ),
+      ),
+    );
+  }
 
-        Container(
-          decoration: BoxDecoration(
-            color: isActive == 'ACTIVE' ? Colors.green : Colors.red,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: IconButton(
-            onPressed: onTap2,
-            icon: const Icon(
-              Icons.edit_outlined,
-              color: Colors.white,
-              size: 22,
+  Widget _buildAvatarImage() {
+    if (profileImageUrl.isNotEmpty) {
+      if (profileImageIsLocal) {
+        return Image.file(
+          File(profileImageUrl),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildInitialsAvatar(),
+        );
+      }
+
+      return Image.network(
+        profileImageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildInitialsAvatar(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
+          );
+        },
+      );
+    }
+
+    return _buildInitialsAvatar();
+  }
+
+  Widget _buildInitialsAvatar() {
+    return Container(
+      color: const Color(0xFFF4F1FF),
+      alignment: Alignment.center,
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 6),
+        child: Text(
+          'No Image',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF4B2BBE),
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildCircleAction({
+    required Color color,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 3,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 32,
+          minHeight: 32,
+        ),
+        iconSize: 20,
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white),
+      ),
     );
   }
 
@@ -496,40 +275,32 @@ class CustomerCard extends StatelessWidget {
     final Uri uri = Uri.parse('tel:$cleanedNumber');
 
     try {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('Dialer not available: $e');
     }
   }
-
-
-  Future<void> _makePhoneCall1(String phoneNumber) async {
-    final Uri uri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
 
   Widget _buildRow(String img, String text, double width) {
     return Row(
       children: [
         Image.asset(
           img,
+          width: width * 0.05,
+          height: width * 0.05,
           color: Colors.white,
-          height: 20,
-          width: 20,
         ),
-        SizedBox(width: width * 0.015),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -540,35 +311,20 @@ class CustomerCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          "Current Balance",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
+        TextButton.icon(
+          onPressed: onTap1,
+          icon: const Icon(Icons.receipt_long, color: Colors.white),
+          label: const Text(
+            'Statement',
+            style: TextStyle(color: Colors.white),
           ),
         ),
-        InkWell(
-          onTap: onTap1,
-          child: Row(
-            spacing: 8,
-            children: [
-              Text(
-                currentBalance,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  decoration: TextDecoration.underline,
-                  decorationColor: Colors.white, // Red underline
-                  decorationThickness: 1,
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-              ),
-            ],
+        Text(
+          currentBalance,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
           ),
         ),
       ],

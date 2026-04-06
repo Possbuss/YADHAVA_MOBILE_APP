@@ -1,7 +1,7 @@
 class ApiConstants {
   ///login section
   static const String baseUrl = "http://10.0.2.2:5274/yadhava/api/";
-  //static const String baseUrl = "http://www.posbuss.com:98/yadhava/api/";
+  static const String baseUrl1 = "http://www.posbuss.com:98/yadhava/api/";
   static const String companyGetAll = "Company/GetCompanyAll";
   static const String getRoute = "MobileAppLogin/GetMobileAppGetRoutes?";
   static const String getVehicle = "MobileAppLogin/GetMobileAppGetVehicles?";
@@ -16,6 +16,11 @@ class ApiConstants {
 
   static const String updateClient = "Client/UpdateMobileAppClient";
   static const String addClient = "Client/CreateMobileAppClient";
+  static const String uploadClientProfilePic = "Client/UploadProfilePic";
+  static const String getMobileAppUserProfile =
+      "Employee/GetMobileAppUserProfile?";
+  static const String updateMobileAppUserProfile =
+      "Employee/UpdateMobileAppUserProfile";
 
   static const String mobileAppInvoices =
       "MobileAppSales/GetMobileAppSalesInvoiceAll?";
@@ -78,12 +83,17 @@ class ApiConstants {
   static const String mobileAppSalesDashBoardHome =
       'MobileAppSales/GetMobileAppSalesDashBoardHome?';
 
-  static const String getMobileActiveClients =
-      'Client/GetMobileActiveClients?';
+  static const String getMobileActiveClients = 'Client/GetMobileActiveClients?';
 
   static const String getMobileInActiveClients =
       'Client/GetMobileInActiveClients?';
-
+  static const String quotationInsert = 'InventorySalesQuotation/Insert';
+  static const String quotationUpdate = 'InventorySalesQuotation/Update';
+  static const String quotationDelete = 'InventorySalesQuotation/Delete?';
+  static const String quotationRegister =
+      'InventorySalesQuotation/GetQuotationRegister?';
+  static const String quotationGetById = 'InventorySalesQuotation/GetById?';
+  static const String quotationGetByNo = 'InventorySalesQuotation/GetByNo?';
 }
 // static const String secondBaseUrl = "http://localhost:5274/api/";
 // static const String clientList = "Client/GetClientsMobileApp?CompanyId=1";

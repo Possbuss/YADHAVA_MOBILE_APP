@@ -24,7 +24,6 @@ import '../../features/route/model/route_detailsModel.dart';
 import 'package:uuid/uuid.dart';
 
 class LocalDbHelper {
-
   final _uuid = const Uuid();
   static final LocalDbHelper _instance = LocalDbHelper._internal();
   factory LocalDbHelper() => _instance;
@@ -44,7 +43,7 @@ class LocalDbHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE company_master (
@@ -106,7 +105,9 @@ class LocalDbHelper {
             transactionYear INTEGER,
             clientSortOrder INTEGER,
             isActive TEXT,
-            createdDate TEXT
+            createdDate TEXT,
+            profilePicUrl TEXT,
+            localProfileImagePath TEXT
           )
         ''');
 
@@ -386,6 +387,18 @@ class LocalDbHelper {
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE clients ADD COLUMN profilePicUrl TEXT',
+          );
+        }
+        if (oldVersion < 3) {
+          await db.execute(
+            'ALTER TABLE clients ADD COLUMN localProfileImagePath TEXT',
+          );
+        }
+      },
     );
   }
 
@@ -399,7 +412,6 @@ class LocalDbHelper {
     await db.delete('orders');
     return true;
   }
-
 
   Future<int> insertOrder(OrderModel order) async {
     final db = await database;
@@ -945,8 +957,7 @@ class LocalDbHelper {
     final db = await database;
     await db.delete('mobile_app_sales_invoice_master_dt');
 
-    await db.delete(
-      'mobile_app_sales_invoice_master');
+    await db.delete('mobile_app_sales_invoice_master');
 
     return true;
   }
@@ -1069,16 +1080,11 @@ class LocalDbHelper {
 
   Future<void> insertInvoices(List<MobileAppSalesInvoiceMaster>? invoices,
       List<MobileAppSalesInvoiceMasterDt>? invoicesDt) async {
-
-
-
     final db = await database;
     await db.transaction((txn) async {
       final batch = txn.batch();
 
-
       for (final invoice in invoices ?? []) {
-
         batch.delete(
           'mobile_app_sales_invoice_master_dt',
           where: 'companyId = ? AND invoiceId = ?',
@@ -1099,7 +1105,6 @@ class LocalDbHelper {
       }
 
       for (final invoice in invoicesDt ?? []) {
-
         batch.insert(
           'mobile_app_sales_invoice_master_dt',
           invoice.toJson(),
@@ -1120,8 +1125,7 @@ class LocalDbHelper {
           'mobile_app_sales_invoice_master',
           where: 'clientId = ? AND companyId = ?',
           whereArgs: [partyId, companyId],
-        orderBy: 'invoiceId DESC'
-      );
+          orderBy: 'invoiceId DESC');
 
       for (var row in invoiceRows) {
         final detailRows = await db.query(
@@ -1255,36 +1259,35 @@ class LocalDbHelper {
               .toList();
 
           mobileInvoice = MobileAppSalesInvoiceMaster(
-            paidAmount: (row['paidAmount'] as num).toDouble(),
-            companyId: row['companyId'] as int,
-            invoiceId: row['invoiceId'] as int,
-            clientId: row['clientId'] as int,
-            clientName: row['clientName']?.toString() ?? '',
-            salesManId: row['driverId'] as int,
-            salesManName: row['driverName']?.toString() ?? '',
-            payType: row['payType']?.toString() ?? '',
-            invoiceNo: row['invoiceNo']?.toString() ?? '',
-            invoiceDate: row['invoiceDate']?.toString() ?? '',
-            routeId: row['routeId'] as int,
-            branchId: row['vehicleId'] as int,
-            branchName: row['vehicleNo']?.toString() ?? '',
-            netTotal: (row['netTotal'] as num).toDouble(),
-            totalAmount: (row['total'] as num).toDouble(),
-            totalDiscountVal: (row['discountAmount'] as num).toDouble(),
-            totalDiscountPer: (row['totalDiscountPer'] as num).toDouble(),
-            details: details,
-            totalTaxableAmount: (row['totalTaxableAmount'] as num).toDouble(),
-            totalSgstAmount: (row['totalSgstAmount'] as num).toDouble(),
-            totalIgstAmount: (row['totalIgstAmount'] as num).toDouble(),
-            totalCgstAmount: (row['totalCgstAmount'] as num).toDouble(),
-            totalCessAmount: (row['totalCessAmount'] as num).toDouble(),
-            srtVoucherNo: row['srtVoucherNo']?.toString() ?? '',
-            receiptNo: row['receiptNo']?.toString() ?? '',
-            longitude: row['longitude']?.toString() ?? '',
-            latitude: row['latitude']?.toString() ?? '',
-            mobile: row['mobile']?.toString() ?? '',
-            uuid: row['uuid']?.toString() ?? ''
-          );
+              paidAmount: (row['paidAmount'] as num).toDouble(),
+              companyId: row['companyId'] as int,
+              invoiceId: row['invoiceId'] as int,
+              clientId: row['clientId'] as int,
+              clientName: row['clientName']?.toString() ?? '',
+              salesManId: row['driverId'] as int,
+              salesManName: row['driverName']?.toString() ?? '',
+              payType: row['payType']?.toString() ?? '',
+              invoiceNo: row['invoiceNo']?.toString() ?? '',
+              invoiceDate: row['invoiceDate']?.toString() ?? '',
+              routeId: row['routeId'] as int,
+              branchId: row['vehicleId'] as int,
+              branchName: row['vehicleNo']?.toString() ?? '',
+              netTotal: (row['netTotal'] as num).toDouble(),
+              totalAmount: (row['total'] as num).toDouble(),
+              totalDiscountVal: (row['discountAmount'] as num).toDouble(),
+              totalDiscountPer: (row['totalDiscountPer'] as num).toDouble(),
+              details: details,
+              totalTaxableAmount: (row['totalTaxableAmount'] as num).toDouble(),
+              totalSgstAmount: (row['totalSgstAmount'] as num).toDouble(),
+              totalIgstAmount: (row['totalIgstAmount'] as num).toDouble(),
+              totalCgstAmount: (row['totalCgstAmount'] as num).toDouble(),
+              totalCessAmount: (row['totalCessAmount'] as num).toDouble(),
+              srtVoucherNo: row['srtVoucherNo']?.toString() ?? '',
+              receiptNo: row['receiptNo']?.toString() ?? '',
+              longitude: row['longitude']?.toString() ?? '',
+              latitude: row['latitude']?.toString() ?? '',
+              mobile: row['mobile']?.toString() ?? '',
+              uuid: row['uuid']?.toString() ?? '');
 
           invoices.add(mobileInvoice);
         }
@@ -1294,7 +1297,7 @@ class LocalDbHelper {
     var pendingOrder = await getPendingOrders();
     for (var row in pendingOrder) {
       var invoice = MobileAppSalesInvoiceMaster(
-        uuid: row.uuid,
+          uuid: row.uuid,
           paidAmount: row.paidAmount.toDouble(),
           companyId: row.companyId,
           invoiceId: row.invoiceId,
@@ -1332,7 +1335,8 @@ class LocalDbHelper {
   // In Active , Active Clients
   // ------------------------------- + ----
 
-  Future<void> insertActiveClients(List<ClientActiveInActiveModel> clients) async {
+  Future<void> insertActiveClients(
+      List<ClientActiveInActiveModel> clients) async {
     final db = await database;
     await db.transaction((txn) async {
       final batch = txn.batch();
@@ -1349,7 +1353,8 @@ class LocalDbHelper {
     });
   }
 
-  Future<void> insertInActiveClients(List<ClientActiveInActiveModel> clients) async {
+  Future<void> insertInActiveClients(
+      List<ClientActiveInActiveModel> clients) async {
     final db = await database;
     await db.transaction((txn) async {
       final batch = txn.batch();
@@ -1368,7 +1373,8 @@ class LocalDbHelper {
 
   Future<List<ClientActiveInActiveModel>> getActiveClients(int? routeId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('clients_active_inactive',
+    final List<Map<String, dynamic>> maps = await db.query(
+        'clients_active_inactive',
         where: 'routeId = ? AND clientType = ?',
         whereArgs: [routeId, 'ACTIVE']);
 
@@ -1377,9 +1383,11 @@ class LocalDbHelper {
     });
   }
 
-  Future<List<ClientActiveInActiveModel>> getInActiveClients(int? routeId) async {
+  Future<List<ClientActiveInActiveModel>> getInActiveClients(
+      int? routeId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('clients_active_inactive',
+    final List<Map<String, dynamic>> maps = await db.query(
+        'clients_active_inactive',
         where: 'routeId = ? AND clientType = ?',
         whereArgs: [routeId, 'INACTIVE']);
 
@@ -1453,17 +1461,87 @@ class LocalDbHelper {
 
   Future<void> insertClients(List<ClientModel> clients) async {
     final db = await database;
+    final List<Map<String, dynamic>> existingRows = await db.query(
+      'clients',
+      columns: ['id', 'localProfileImagePath'],
+    );
+    final Map<int, String> existingLocalPaths = <int, String>{};
+    for (final row in existingRows) {
+      final dynamic idValue = row['id'];
+      final dynamic pathValue = row['localProfileImagePath'];
+      if (idValue is int &&
+          pathValue is String &&
+          pathValue.trim().isNotEmpty) {
+        existingLocalPaths[idValue] = pathValue.trim();
+      }
+    }
+
     await db.transaction((txn) async {
       final batch = txn.batch();
       for (final client in clients) {
+        final Map<String, dynamic> data = client.toJson();
+        final int? clientId = client.id;
+        if (clientId != null &&
+            (data['localProfileImagePath'] == null ||
+                (data['localProfileImagePath'] as String).trim().isEmpty)) {
+          final String? existingPath = existingLocalPaths[clientId];
+          if (existingPath != null && existingPath.isNotEmpty) {
+            data['localProfileImagePath'] = existingPath;
+          }
+        }
+
         batch.insert(
           'clients',
-          client.toJson(),
+          data,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
       await batch.commit(noResult: true); // set noResult to true for speed
     });
+  }
+
+  Future<void> saveClientProfileImage({
+    required int clientId,
+    required String localProfileImagePath,
+    String? profilePicUrl,
+  }) async {
+    final db = await database;
+    final Map<String, Object?> values = <String, Object?>{
+      'localProfileImagePath': localProfileImagePath,
+    };
+    if (profilePicUrl != null && profilePicUrl.trim().isNotEmpty) {
+      values['profilePicUrl'] = profilePicUrl.trim();
+    }
+
+    await db.update(
+      'clients',
+      values,
+      where: 'id = ?',
+      whereArgs: [clientId],
+    );
+  }
+
+  Future<Map<int, String>> getClientLocalProfileImagePaths() async {
+    final db = await database;
+    final List<Map<String, dynamic>> rows = await db.query(
+      'clients',
+      columns: ['id', 'localProfileImagePath'],
+      where:
+          'localProfileImagePath IS NOT NULL AND TRIM(localProfileImagePath) != ?',
+      whereArgs: [''],
+    );
+
+    final Map<int, String> result = <int, String>{};
+    for (final row in rows) {
+      final dynamic idValue = row['id'];
+      final dynamic pathValue = row['localProfileImagePath'];
+      if (idValue is int &&
+          pathValue is String &&
+          pathValue.trim().isNotEmpty) {
+        result[idValue] = pathValue.trim();
+      }
+    }
+    return result;
   }
 
   Future<void> updateClients(List<ClientModel>? clients, int clientId) async {
@@ -1472,13 +1550,11 @@ class LocalDbHelper {
     await db.transaction((txn) async {
       final batch = txn.batch();
 
-      if (clientId != null) {
-        batch.delete(
-          'clients',
-          where: 'id = ?',
-          whereArgs: [clientId],
-        );
-      }
+      batch.delete(
+        'clients',
+        where: 'id = ?',
+        whereArgs: [clientId],
+      );
 
       for (final client in clients ?? []) {
         batch.insert(
@@ -1496,7 +1572,7 @@ class LocalDbHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('clients',
         where: 'routeId = ? AND companyId = ? AND isActive = ?',
-        whereArgs: [routeId, companyId,'Y']);
+        whereArgs: [routeId, companyId, 'Y']);
 
     return List.generate(maps.length, (i) {
       return ClientModel.fromJson(maps[i]);
@@ -1656,7 +1732,8 @@ class LocalDbHelper {
   Future<List<CashCreditDetailsModel>> getCashCreditDetails() async {
     final db = await database;
     final maps = await db.query('cash_credit_details',
-    where: '(debit IS NOT NULL AND credit IS NOT NULL AND debit <> credit)');
+        where:
+            '(debit IS NOT NULL AND credit IS NOT NULL AND debit <> credit)');
     return maps.map((e) => CashCreditDetailsModel.fromJson(e)).toList();
   }
 
