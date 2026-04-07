@@ -3,8 +3,8 @@ import 'package:Yadhava/features/customer/presentation/pages/cash_recept/widgets
 import 'package:flutter/material.dart';
 
 import '../../../../../core/constants/color.dart';
-import '../../../model/InvoiceModel.dart';
 import '../../pages/Invoice_pages/invoice_details.dart';
+import '../../pages/Invoice_pages/invoice_print_helper.dart';
 
 Widget buildInvoiceList({
   required List<MobileAppSalesInvoiceMaster> invoices,
@@ -51,7 +51,7 @@ Widget buildInvoiceList({
               context,
               MaterialPageRoute(
                 builder: (context) => InvoiceDetailsPage(
-                  invoiceModel: invoice!,
+                  invoiceModel: invoice,
                   fromDate: fromDate,
                   endDate: endDate,
                   partyId: partyId,
@@ -67,12 +67,27 @@ Widget buildInvoiceList({
             }
           },
           child: InvoiceListTile(
+            customerName: invoice.clientName,
             branchName: invoice.branchName,
             salesManName: invoice.salesManName,
             // invoiceType: invoice.invoiceType,
             invoiceNo: invoice.invoiceNo,
             invoiceDate: invoice.invoiceDate,
             netTotal: invoice.netTotal,
+            onPrint: invoice.invoiceNo.trim().isEmpty
+                ? null
+                : () async {
+                    try {
+                      await InvoicePrintHelper.printInvoice(invoice);
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to print invoice: $error'),
+                        ),
+                      );
+                    }
+                  },
           ),
         );
       },

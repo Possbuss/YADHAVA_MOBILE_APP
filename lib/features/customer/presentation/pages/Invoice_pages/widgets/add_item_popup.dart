@@ -29,7 +29,7 @@ class _AddItemPopupState extends State<AddItemPopup> {
   String? selectedUOM;
   String? uomInitialValue;
   List<String> uomItems = [];
-  late ProductMaster selectedItemData ;
+  ProductMaster? selectedItemData;
 
   @override
   void initState() {
@@ -60,13 +60,11 @@ class _AddItemPopupState extends State<AddItemPopup> {
                         setState(() {
                           selectedItem = value;
                           selectedItemData = state.items.firstWhere(
-                                (item) => item.productName == value,
-                            ///orElse: () => {},
+                            (item) => item.productName == value,
                           );
-                          sellingController.text = selectedItemData.sellingPrice.toString() ?? '0';
+                          sellingController.text = selectedItemData!.sellingPrice.toString();
                           totalController.text = sellingController.text;
-                          uomInitialValue = selectedItemData.packingName.toString() ?? 'N/A';
-                          // unitRateController.text=sellingController[]?.
+                          uomInitialValue = selectedItemData!.packingName ?? 'N/A';
                           uomItems = [uomInitialValue!];
                           log(sellingController.text);
                         });
@@ -163,22 +161,31 @@ class _AddItemPopupState extends State<AddItemPopup> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              if (selectedItemData == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select an item before adding.'),
+                  ),
+                );
+                return;
+              }
+
               MobileAppSalesInvoiceDetails newItem = MobileAppSalesInvoiceDetails(
                 productName: selectedItem ?? '',
                 quantity: double.parse(qtyController.text),
                 foc: double.parse(focController.text),
                 srtQty: double.parse(srtController.text),
                 totalRate: double.parse(totalController.text),
-                siNo: selectedItemData.siNo,
-                productId: selectedItemData.productId,
-                partNumber: selectedItemData.partNumber,
-                packingDescription: selectedItemData.packingDescription,
-                packingId: selectedItemData.packingId,
-                packingName:selectedItemData.packingName,
+                siNo: selectedItemData!.siNo,
+                productId: selectedItemData!.productId,
+                partNumber: selectedItemData!.partNumber,
+                packingDescription: selectedItemData!.packingDescription,
+                packingId: selectedItemData!.packingId,
+                packingName: selectedItemData!.packingName,
                 totalQty: 0.0,
                 unitRate: 0.0,
                 clientId: 0,
-                companyId: 1
+                companyId: 1,
               );
               Navigator.pop(context, newItem);
             }

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/util/session.dart';
@@ -10,6 +13,14 @@ class SalesQuotationRepo {
   final Dio _dio = Dio();
   final Session _session = Session();
   final GetLoginRepo _loginRepo = GetLoginRepo();
+
+  String _draftKey({
+    required int companyId,
+    required int customerId,
+    required int invoiceId,
+  }) {
+    return 'sales_quotation_draft_${companyId}_${customerId}_$invoiceId';
+  }
 
   Future<Options> _options() async {
     final String token = await _session.tokenExpired();
@@ -87,6 +98,57 @@ class SalesQuotationRepo {
       options: await _options(),
     );
     _throwIfFailed(response.data, fallback: 'Failed to delete quotation.');
+  }
+
+  Future<void> saveDraft(SalesQuotation quotation) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _draftKey(
+        companyId: quotation.companyId,
+        customerId: quotation.customerAccountId,
+        invoiceId: quotation.invoiceId,
+      ),
+      jsonEncode(quotation.toJson()),
+    );
+  }
+
+  Future<SalesQuotation?> getDraft({
+    required int companyId,
+    required int customerId,
+    required int invoiceId,
+  }) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? rawDraft = prefs.getString(
+      _draftKey(
+        companyId: companyId,
+        customerId: customerId,
+        invoiceId: invoiceId,
+      ),
+    );
+    if (rawDraft == null || rawDraft.isEmpty) {
+      return null;
+    }
+
+    try {
+      return SalesQuotation.fromJson(jsonDecode(rawDraft) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> clearDraft({
+    required int companyId,
+    required int customerId,
+    required int invoiceId,
+  }) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(
+      _draftKey(
+        companyId: companyId,
+        customerId: customerId,
+        invoiceId: invoiceId,
+      ),
+    );
   }
 
   void _throwIfFailed(dynamic data, {required String fallback}) {

@@ -343,22 +343,39 @@ class SalesQuotationDetail {
 
   factory SalesQuotationDetail.fromJson(Map<String, dynamic> json) {
     return SalesQuotationDetail(
-      siNo: int.tryParse(json['siNo']?.toString() ?? '') ?? 0,
-      productId: int.tryParse(json['productId']?.toString() ?? '') ?? 0,
-      partNumber: json['partNumber']?.toString() ?? '',
-      productName: json['productName']?.toString() ?? '',
-      packingDescription: json['packingDescription']?.toString() ?? '',
-      packingId: int.tryParse(json['packingId']?.toString() ?? '') ?? 0,
-      packingName: json['packingName']?.toString() ?? '',
-      quantity: double.tryParse(json['quantity']?.toString() ?? '') ?? 0,
+      siNo: int.tryParse((json['siNo'] ?? json['SiNo'] ?? '').toString()) ?? 0,
+      productId:
+          int.tryParse((json['productId'] ?? json['ProductId'] ?? '').toString()) ??
+              0,
+      partNumber: (json['partNumber'] ?? json['PartNumber'] ?? '').toString(),
+      productName: (json['productName'] ?? json['ProductName'] ?? '').toString(),
+      packingDescription:
+          (json['packingDescription'] ?? json['PackingDescription'] ?? '')
+              .toString(),
+      packingId:
+          int.tryParse((json['packingId'] ?? json['PackingId'] ?? '').toString()) ??
+              0,
+      packingName: (json['packingName'] ?? json['PackingName'] ?? '').toString(),
+      quantity:
+          double.tryParse((json['quantity'] ?? json['Quantity'] ?? '').toString()) ??
+              0,
       foc: double.tryParse(json['foc']?.toString() ?? '') ?? 0,
       srtQty: double.tryParse(
-            json['srtQty']?.toString() ?? json['srt']?.toString() ?? '',
+            json['srtQty']?.toString() ??
+                json['SrtQty']?.toString() ??
+                json['srt']?.toString() ??
+                '',
           ) ??
           0,
-      totalQty: double.tryParse(json['totalQty']?.toString() ?? '') ?? 0,
-      unitRate: double.tryParse(json['unitRate']?.toString() ?? '') ?? 0,
-      totalRate: double.tryParse(json['totalRate']?.toString() ?? '') ?? 0,
+      totalQty:
+          double.tryParse((json['totalQty'] ?? json['TotalQty'] ?? '').toString()) ??
+              0,
+      unitRate:
+          double.tryParse((json['unitRate'] ?? json['UnitRate'] ?? '').toString()) ??
+              0,
+      totalRate:
+          double.tryParse((json['totalRate'] ?? json['TotalRate'] ?? '').toString()) ??
+              0,
     );
   }
 

@@ -96,6 +96,13 @@ class _InvoicePageState extends State<InvoicePage> {
   Widget build(BuildContext context) {
     if (!isDataFetched) return buildLoadingScreen(context);
 
+    final String customerName = widget.client.contactPersonName?.trim().isNotEmpty ==
+            true
+        ? widget.client.contactPersonName!.trim()
+        : (widget.client.name?.trim().isNotEmpty == true
+            ? widget.client.name!.trim()
+            : 'Customer Invoices');
+
     return BlocListener<InvoiceBloc, InvoiceState>(
       // listener: (context, state) {
       //   if (state is InvoiceLoaded) {
@@ -108,17 +115,23 @@ class _InvoicePageState extends State<InvoicePage> {
         }
       },
       child: Scaffold(
-
         backgroundColor: Colour.pBackgroundBlack,
         appBar: AppBar(
           centerTitle: true,
           backgroundColor: Colour.pDeepLightBlue,
+          elevation: 0,
+          toolbarHeight: 76,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(12),
+            ),
+          ),
           title: const Text(
             "Invoices",
             style: TextStyle(
-              color: Colour.SilverGrey,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
             ),
           ),
           leading: GestureDetector(
@@ -128,36 +141,76 @@ class _InvoicePageState extends State<InvoicePage> {
                     builder: (context) => HomePage(
                           index: 1,
                         ))),
-            child: const Icon(Icons.arrow_back_ios, color: Colors.grey),
+            child: const Icon(Icons.arrow_back_ios, color: Colors.white70),
           ),
         ),
-        body: BlocBuilder<InvoiceBloc, InvoiceState>(
-          builder: (context, state) {
-            if (state is InvoiceLoading) return _buildLoadingIndicator();
-            if (state is InvoiceLoaded) {
-              return buildInvoiceList(
-                  invoices: state.invoices,
-                  refreshIndicatorKey: refreshIndicatorKey,
-                  onRefresh: _fetchInvoices,
-                  context: context,
-                  fromDate: fromDate,
-                  endDate: endDate,
-                  partyId: widget.partyId ?? 0,
-                  vehicleId: vehicleId,
-                  companyId: companyId);
-            }
-            if (state is InvoiceError) {
-              Future.delayed(const Duration(seconds: 2), () {
-                if (!mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomePage(index: 1)),
-                );
-              });
-              return _buildErrorMessage("Something Went Wrong");
-            }
-            return const SizedBox.shrink();
-          },
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colour.pDeepLightBlue.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colour.pDeepLightBlue.withValues(alpha: 0.18),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    customerName.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<InvoiceBloc, InvoiceState>(
+                builder: (context, state) {
+                  if (state is InvoiceLoading) return _buildLoadingIndicator();
+                  if (state is InvoiceLoaded) {
+                    return buildInvoiceList(
+                        invoices: state.invoices,
+                        refreshIndicatorKey: refreshIndicatorKey,
+                        onRefresh: _fetchInvoices,
+                        context: context,
+                        fromDate: fromDate,
+                        endDate: endDate,
+                        partyId: widget.partyId ?? 0,
+                        vehicleId: vehicleId,
+                        companyId: companyId);
+                  }
+                  if (state is InvoiceError) {
+                    Future.delayed(const Duration(seconds: 2), () {
+                      if (!mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HomePage(index: 1),
+                        ),
+                      );
+                    });
+                    return _buildErrorMessage("Something Went Wrong");
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

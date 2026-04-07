@@ -450,7 +450,9 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
               fontSize: 12,
               color: PdfColors.white,
             ),
-            headerDecoration: pw.BoxDecoration(color: PdfColors.blue800),
+            headerDecoration: const pw.BoxDecoration(
+              color: PdfColors.deepPurple,
+            ),
             cellStyle: pw.TextStyle(fontSize: 10),
             cellAlignment: pw.Alignment.centerLeft,
             columnWidths: {
@@ -926,6 +928,17 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                 spacing: 3,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.invoiceModel.clientName.isNotEmpty) ...[
+                    Text(
+                      "Customer: ${widget.invoiceModel.clientName}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   Row(
                     spacing: 6,
                     children: [

@@ -21,6 +21,7 @@ import 'package:Yadhava/features/home/presentation/pages/widgets/table_row.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/color.dart';
@@ -29,8 +30,10 @@ import '../../../../core/util/local_db_helper.dart';
 import '../../../customer/presentation/bloc/inovice_bloc/invoice_bloc.dart';
 import '../../../customer/presentation/bloc/last_invoice_bloc/lastinvoice_bloc.dart';
 import '../../../customer/presentation/pages/customer_details/bloc/add_item_bloc.dart';
+import '../../../customer/data/client_model.dart';
 import '../../../customer/presentation/pages/customer_view/active_client_view.dart';
 import '../../../customer/presentation/pages/customer_view/inactive_client_view.dart';
+import '../../../customer/presentation/pages/quotation/quotation_register_page.dart';
 import '../../../customer/presentation/pages/customer_view/route_map/route_map_page.dart';
 import '../../../profile/data/mobile_app_user_profile.dart';
 import '../../../profile/domain/mobile_app_user_profile_repo.dart';
@@ -206,6 +209,33 @@ class _HomeScreenState extends State<HomeScreen> {
     return '$normalizedBaseUrl$normalizedPath';
   }
 
+  Future<void> _openHelpSite() async {
+    final Uri helpUri = Uri.parse('https://www.posbuss.com');
+    if (!await launchUrl(helpUri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open help website.')),
+      );
+    }
+  }
+
+  Future<void> _openSalesOrders() async {
+    Navigator.pop(context);
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuotationRegisterPage(
+          client: ClientModel(
+            companyId: companyId,
+            id: 0,
+            name: 'All Customers',
+            contactPersonName: 'All Customers',
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ImageProvider<Object>? profileImageProvider = _profileImageProvider();
@@ -222,40 +252,74 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🧑 User Header
-                UserAccountsDrawerHeader(
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
                   decoration:
                       const BoxDecoration(color: Colour.pContainerBlack),
-                  accountName: Text(
-                    userName,
-                    style: const TextStyle(color: Colors.white),
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: _openEditProfile,
+                            child: CircleAvatar(
+                              radius: 40,
+                              backgroundColor: Colors.white,
+                              backgroundImage: profileImageProvider,
+                              child: profileImageProvider == null
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 35,
+                                      color: Colors.blueAccent,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            userName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            "Welcome back!",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: _openEditProfile,
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit_outlined,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  accountEmail: const Text(
-                    "Welcome back!",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  currentAccountPicture: GestureDetector(
-                    onTap: _openEditProfile,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      backgroundImage: profileImageProvider,
-                      child: profileImageProvider == null
-                          ? const Icon(
-                              Icons.person,
-                              size: 35,
-                              color: Colors.blueAccent,
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.edit, color: Colors.white),
-                  title: const Text(
-                    "Edit Profile",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: _openEditProfile,
                 ),
                 ListTile(
                   leading: const Icon(Icons.alt_route, color: Colors.white),
@@ -337,6 +401,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 const Divider(color: Colors.white54),
+                const Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Text(
+                    "Sales",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.request_quote_outlined,
+                    color: Colors.white,
+                  ),
+                  title: const Text(
+                    "Sales Orders",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: _openSalesOrders,
+                ),
 
                 // 🔄 Sync Clients Button (disabled for now)
                 // Padding(
@@ -382,6 +469,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     Navigator.pop(context);
                     // TODO: handle logout
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.help_outline, color: Colors.white),
+                  title: const Text(
+                    "Help",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _openHelpSite();
                   },
                 ),
               ],

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-Widget editInvoice(context){
+Widget editInvoice(BuildContext context, {String? customerName}){
   return Dialog(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
@@ -14,11 +14,23 @@ Widget editInvoice(context){
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min, // Prevents it from taking full height
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             "Edit Invoice",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          if (customerName != null && customerName.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              customerName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           const TextField(
             decoration: InputDecoration(
