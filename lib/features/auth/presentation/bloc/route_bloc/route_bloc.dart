@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../data/route_model.dart';
 import '../../../domain/route_repository.dart';
 
 part 'route_event.dart';
@@ -21,22 +22,10 @@ class RouteBloc extends Bloc<RouteEvent, RouteState> {
       )async{
     emit(RouteLoading());
     try{
-      final response=await  routeRepo.getRouteRepo();
-      if(response!.statusCode==200||response.statusCode==201){
-        final data=response.data;
-        final List<String> route = [];
-        final List routeIdList = [];
-        for (int i = 0; i < data.length; i++) {
-          route.add(data[i]['masterName']);
-        } for (int i = 0; i < data.length; i++) {
-          routeIdList.add(data[i]['masterId']);
-        }
-        emit(RouteLoaded(route,routeIdList));
-      }else{
-        emit(RouteError());
-      }
-    }catch(ex){
-      Exception(ex);
+      final List<RouteModel> routes = await routeRepo.getRouteRepo();
+      emit(RouteLoaded(routes));
+    }catch(_){
+      emit(RouteError());
     }
   }
 }

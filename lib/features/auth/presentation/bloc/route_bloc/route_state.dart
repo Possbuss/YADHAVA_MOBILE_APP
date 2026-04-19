@@ -15,11 +15,17 @@ class RouteLoading extends RouteState {
 }
 
 class RouteLoaded extends RouteState {
-  final List<String> route;
-  final List routeIdList;
-  const RouteLoaded(this.route, this.routeIdList);
+  final List<RouteModel> routes;
+  const RouteLoaded(this.routes);
+
+  List<String> get route =>
+      routes.map((routeModel) => routeModel.masterName).toList();
+
+  List<int> get routeIdList =>
+      routes.map((routeModel) => routeModel.masterId).toList();
+
   @override
-  List<Object> get props => [route,routeIdList];
+  List<Object> get props => [routes];
 }
 
 class RouteError extends RouteState {

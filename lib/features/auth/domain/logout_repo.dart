@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/util/api_query.dart';
 import '../../../core/util/local_db_helper.dart';
-import '../../../core/util/session.dart';
 import '../../splash/presentation/splash.dart';
 import '../data/login_model.dart';
 import '../data/logout_model.dart';
@@ -14,11 +13,10 @@ import 'login_repo.dart';
 
 class Logoutrepo {
   final ApiQuery apiQuery = ApiQuery();
-  GetLoginRepo loginRepo = GetLoginRepo();
-  Session session = Session();
-  Future<void> logout(BuildContext context) async {
-    String token = await session.tokenExpired();
+  final GetLoginRepo loginRepo = GetLoginRepo();
+  final RefreshRepo _refreshRepo = RefreshRepo();
 
+  Future<void> logout(BuildContext context) async {
     try {
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
       if (loginModel == null) throw Exception("LoginModel is null");
@@ -31,7 +29,8 @@ class Logoutrepo {
         companyId: loginModel.companyId,
       );
 
-      final response = await apiQuery.postQuery(ApiConstants.logout, token, logoutModel.toJson());
+      final response =
+          await apiQuery.postQuery(ApiConstants.logout, logoutModel.toJson());
 
       if (response == null) throw Exception("No response received from the API");
 
@@ -52,16 +51,16 @@ class Logoutrepo {
         db.clearInvoiceTablesAllData();
         db.clearPendingOrdersData();
 
-        GetLoginRepo().clearUserLoginResponse();
+        await loginRepo.clearUserLoginResponse();
 
-        GetLoginRepo().clearStringValue("LAST_INVOICE_SYNC");
-        GetLoginRepo().clearStringValue("INVOICE_SYNC");
+        await loginRepo.clearStringValue("LAST_INVOICE_SYNC");
+        await loginRepo.clearStringValue("INVOICE_SYNC");
 
-        GetLoginRepo().clearStringValue("USER_PSD");
-        GetLoginRepo().clearStringValue("GET_ALL_COMPANY_RESPONSE");
-        GetLoginRepo().clearStringValue("selected_vehicle");
-        GetLoginRepo().clearStringValue("selected_route");
-        RefreshRepo().clearUserLoginResponse();
+        await loginRepo.clearStringValue("USER_PSD");
+        await loginRepo.clearStringValue("GET_ALL_COMPANY_RESPONSE");
+        await loginRepo.clearStringValue("selected_vehicle");
+        await loginRepo.clearStringValue("selected_route");
+        await _refreshRepo.clearUserLoginResponse();
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const SplashScreen()),
               (Route<dynamic> route) => false,

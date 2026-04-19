@@ -34,6 +34,7 @@ dependencies:
   share_plus: ^10.1.4
   cross_file: ^0.3.4+2
   flip_card: ^0.7.0
+  flutter_screenutil: ^5.9.3
   
   sqflite: ^2.3.0  
   path: ^1.8.3
@@ -42,7 +43,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  flutter_screenutil: ^5.9.3
   launcher_name: ^1.0.2
 
 flutter_launcher_icons:

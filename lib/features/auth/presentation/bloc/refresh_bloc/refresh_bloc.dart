@@ -46,11 +46,8 @@
 // }
 
 import 'dart:async';
-import 'dart:convert';
-import 'package:bloc/bloc.dart';
-import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/login_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/refresh_model.dart';
 import '../../../domain/login_repo.dart';
 import '../../../domain/refresh_repo.dart';
@@ -71,19 +68,11 @@ class RefreshBloc extends Bloc<RefreshEvent, RefreshState> {
       Emitter<RefreshState> emit) async {
     emit(RefreshLoading());
     try {
-      final Response? response = await refreshRepo.refreshRepo(event.refreshData);
-      if (response != null && response.statusCode == 200) {
-        final Map<String, dynamic> responseData = response.data;
-        RefreshModel data = RefreshModel.fromJson(responseData);
-
-        await refreshRepo.storeToken(data);
-        emit(RefreshLoaded(data));
-      } else {
-        emit(RefreshError("Failed to refresh token"));
-      }
+      final RefreshModel data = await refreshRepo.refreshRepo(event.refreshData);
+      await refreshRepo.storeToken(data);
+      emit(RefreshLoaded(data));
     } catch (ex) {
       emit(RefreshError(ex.toString()));
     }
   }
 }
-

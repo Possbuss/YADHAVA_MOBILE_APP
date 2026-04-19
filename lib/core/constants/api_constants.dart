@@ -1,7 +1,8 @@
 class ApiConstants {
   ///login section
-  static const String baseUrl = "http://10.0.2.2:5274/yadhava/api/";
-  static const String baseUrl1 = "http://www.posbuss.com:98/yadhava/api/";
+  static const String baseUrl1 = "http://10.0.2.2:5274/yadhava/api/";
+  static const String baseUrl2 = "http://www.posbuss.com:98/yadhava/api/";
+  static const String baseUrl = "http://www.posbuss.com:83/yadhava/api/";
   static const String companyGetAll = "Company/GetCompanyAll";
   static const String getRoute = "MobileAppLogin/GetMobileAppGetRoutes?";
   static const String getVehicle = "MobileAppLogin/GetMobileAppGetVehicles?";

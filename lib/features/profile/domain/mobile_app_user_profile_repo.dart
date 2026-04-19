@@ -1,36 +1,26 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../core/constants/api_constants.dart';
 import '../../../core/util/api_query.dart';
-import '../../../core/util/session.dart';
 import '../../auth/data/login_model.dart';
 import '../../auth/domain/login_repo.dart';
 import '../data/mobile_app_user_profile.dart';
+import '../data/local/mobile_app_user_profile_local_data_source.dart';
 
 class MobileAppUserProfileRepo {
-  static const String _storageKey = 'MOBILE_APP_USER_PROFILE';
+  MobileAppUserProfileRepo({
+    ApiQuery? apiQuery,
+    GetLoginRepo? loginRepo,
+    MobileAppUserProfileLocalDataSource? localDataSource,
+  })  : _apiQuery = apiQuery ?? ApiQuery(),
+        _loginRepo = loginRepo ?? GetLoginRepo(),
+        _localDataSource =
+            localDataSource ?? MobileAppUserProfileLocalDataSource();
 
-  final ApiQuery _apiQuery = ApiQuery();
-  final Session _session = Session();
-  final GetLoginRepo _loginRepo = GetLoginRepo();
+  final ApiQuery _apiQuery;
+  final GetLoginRepo _loginRepo;
+  final MobileAppUserProfileLocalDataSource _localDataSource;
 
-  Future<MobileAppUserProfile?> getStoredProfile() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? storedValue = prefs.getString(_storageKey);
-    if (storedValue == null || storedValue.isEmpty) {
-      return null;
-    }
-
-    try {
-      return MobileAppUserProfile.fromJson(
-        json.decode(storedValue) as Map<String, dynamic>,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
+  Future<MobileAppUserProfile?> getStoredProfile() =>
+      _localDataSource.getProfile();
 
   Future<MobileAppUserProfile?> getProfile() async {
     final LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
@@ -41,10 +31,8 @@ class MobileAppUserProfileRepo {
     final MobileAppUserProfile? storedProfile = await getStoredProfile();
 
     try {
-      final String token = await _session.tokenExpired();
       final response = await _apiQuery.getQuery(
         '${ApiConstants.getMobileAppUserProfile}companyId=${loginModel.companyId}&employeeId=${loginModel.employeeId}',
-        token,
       );
 
       final dynamic data = response?.data;
@@ -82,10 +70,8 @@ class MobileAppUserProfileRepo {
     return fallbackProfile;
   }
 
-  Future<void> storeProfile(MobileAppUserProfile profile) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, json.encode(profile.toJson()));
-  }
+  Future<void> storeProfile(MobileAppUserProfile profile) =>
+      _localDataSource.storeProfile(profile);
 
   Future<void> updateStoredLoginProfile(MobileAppUserProfile profile) async {
     final LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
@@ -99,10 +85,8 @@ class MobileAppUserProfileRepo {
   }
 
   Future<void> updateProfile(MobileAppUserProfile profile) async {
-    final String token = await _session.tokenExpired();
     final response = await _apiQuery.postQuery(
       ApiConstants.updateMobileAppUserProfile,
-      token,
       profile.toRequestJson(),
     );
 

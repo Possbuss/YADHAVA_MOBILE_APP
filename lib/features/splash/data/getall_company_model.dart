@@ -197,7 +197,6 @@
 //
 //     final getAllCompanyModel = getAllCompanyModelFromJson(jsonString);
 
-import 'package:meta/meta.dart';
 import 'dart:convert';
 
 List<GetAllCompanyModel> getAllCompanyModelFromJson(String str) => List<GetAllCompanyModel>.from(json.decode(str).map((x) => GetAllCompanyModel.fromJson(x)));

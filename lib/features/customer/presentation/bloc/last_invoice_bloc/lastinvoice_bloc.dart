@@ -1,8 +1,7 @@
 import 'dart:async';
 
-// ignore: depend_on_referenced_packages
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/last_invoice_repo.dart';
 import '../../pages/customer_details/model/addItem_model.dart';
@@ -39,7 +38,7 @@ class LastInvoiceBloc extends Bloc<LastInvoiceEvent, LastInvoiceState> {
     emit(LastInvoiceLoading());
     try {
       final invoiceDet = await repo.fetchLastInvoice(event.partyId);
-      final data = invoiceDet ?? [];
+      final data = invoiceDet;
       List<ProductItem> details = [];
       for (var item in data) {
         ProductItem selectedItem = ProductItem(
@@ -51,7 +50,7 @@ class LastInvoiceBloc extends Bloc<LastInvoiceEvent, LastInvoiceState> {
           totalRate: 0.0,
           uom: item.packingName ?? '0',
           packingDescription: item.packingDescription ?? '',
-          packingId: item.packingId ?? 0,
+          packingId: item.packingId,
           packingName: item.packingName ?? '',
           partNumber: item.partNumber?.toString() ?? "0",
           productId: item.productId,

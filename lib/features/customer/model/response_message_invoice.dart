@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:Yadhava/features/customer/data/client_model.dart';
@@ -29,61 +28,47 @@ class ResponseMessageMobileSalesInvoice {
   final List<RouteHistory>? routeHistory;
   final List<RouteDetailsModel>? routeDetails;
 
-  ResponseMessageMobileSalesInvoice({
-    required this.message,
-    required this.result,
-    required this.iDs,
+  ResponseMessageMobileSalesInvoice(
+      {required this.message,
+      required this.result,
+      required this.iDs,
+      required this.mobileAppSalesInvoiceAll,
+      required this.mobileAppSalesDashBoardHome,
+      required this.clientModel,
+      required this.lastInvoiceModel,
+      required this.routeHistory,
+      required this.routeDetails});
 
-    required this.mobileAppSalesInvoiceAll,
-    required this.mobileAppSalesDashBoardHome,
-    required this.clientModel,
-    required this.lastInvoiceModel,
-    required this.routeHistory,
-    required this.routeDetails
-  });
-
-  factory ResponseMessageMobileSalesInvoice.fromJson(Map<String, dynamic> json) {
-
-
+  factory ResponseMessageMobileSalesInvoice.fromJson(
+      Map<String, dynamic> json) {
     return ResponseMessageMobileSalesInvoice(
-      message: json["message"] ?? "",
-      result: json["result"] ?? false,
-      iDs: json["iDs"] ?? "",
-
-      mobileAppSalesInvoiceAll: json["mobileAppSalesInvoiceAll"] != null ?
-      MobileAppSalesInvoiceAll.fromJson(json["mobileAppSalesInvoiceAll"]) : null,
-
-      mobileAppSalesDashBoardHome: json["mobileAppSalesDashBoardHome"] != null ?
-      MobileAppSalesDashBoardHome.fromJson(json["mobileAppSalesDashBoardHome"])
-      : null,
-
-
-      clientModel:
-      (json["mobileAppClientsLists"] as List?)
-          ?.map((x) => ClientModel.fromJson(x))
-          .toList() ??
+      message: (json["Message"] ?? json["message"] ?? "").toString(),
+      result: json["Result"] ?? json["result"] ?? false,
+      iDs: (json["IDs"] ?? json["iDs"] ?? json["ids"] ?? "").toString(),
+      mobileAppSalesInvoiceAll: json["mobileAppSalesInvoiceAll"] != null
+          ? MobileAppSalesInvoiceAll.fromJson(json["mobileAppSalesInvoiceAll"])
+          : null,
+      mobileAppSalesDashBoardHome: json["mobileAppSalesDashBoardHome"] != null
+          ? MobileAppSalesDashBoardHome.fromJson(
+              json["mobileAppSalesDashBoardHome"])
+          : null,
+      clientModel: (json["mobileAppClientsLists"] as List?)
+              ?.map((x) => ClientModel.fromJson(x))
+              .toList() ??
           [],
-
-      lastInvoiceModel:
-      (json["mobileAppLastSalesInvoiceDetails"] as List?)
-          ?.map((x) => MobileAppSalesInvoiceDetail.fromJson(x))
-          .toList() ??
+      lastInvoiceModel: (json["mobileAppLastSalesInvoiceDetails"] as List?)
+              ?.map((x) => MobileAppSalesInvoiceDetail.fromJson(x))
+              .toList() ??
           [],
-
-      routeHistory:
-      (json["mobileAppSalesRouteHistory"] as List?)
-          ?.map((x) => RouteHistory.fromJson(x))
-          .toList() ??
+      routeHistory: (json["mobileAppSalesRouteHistory"] as List?)
+              ?.map((x) => RouteHistory.fromJson(x))
+              .toList() ??
           [],
-
-      routeDetails:
-      (json["mobileAppSalesRouteHistoryDetails"] as List?)
-          ?.map((x) => RouteDetailsModel.fromJson(x))
-          .toList() ??
+      routeDetails: ((json["mobileAppSalesRouteHistoryDetails"] ??
+                  json["mobileAppSalesRouteHistoryDeatils"]) as List?)
+              ?.map((x) => RouteDetailsModel.fromJson(x))
+              .toList() ??
           [],
-
     );
   }
 }
-
-

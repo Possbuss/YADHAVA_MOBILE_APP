@@ -15,7 +15,7 @@ class LoginLoading extends LoginState {
 }
 
 class LoginLoaded extends LoginState {
-  final dynamic response;
+  final LoginModel response;
   const LoginLoaded(this.response);
 
   @override
@@ -23,8 +23,8 @@ class LoginLoaded extends LoginState {
 }
 
 class LoginError extends LoginState {
-  final dynamic errorMessage;
+  final String errorMessage;
   const LoginError(this.errorMessage);
   @override
-  List<Object> get props => [];
+  List<Object> get props => [errorMessage];
 }

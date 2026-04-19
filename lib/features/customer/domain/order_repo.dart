@@ -8,8 +8,8 @@ import '../model/orderModel.dart';
 
 class OrderRepo {
   final ApiQuery apiQuery = ApiQuery();
-  GetLoginRepo loginRepo = GetLoginRepo();
-  Session session = Session();
+  final GetLoginRepo loginRepo = GetLoginRepo();
+  final Session session = Session();
 
   Future<SalesInvoice?> getOrder(String invoiceNo) async {
     String token = await session.tokenExpired();
@@ -22,20 +22,14 @@ class OrderRepo {
           token);
       if (response != null && response.statusCode == 200) {
         if (response.data != null && response.data is Map<String, dynamic>) {
-          print("Full Response: ${response.data}"); // Debugging step
-
-          // Parse the full SalesInvoice object
           return SalesInvoice.fromJson(response.data);
         } else {
-          print("Response data is not a valid Map.");
           throw Exception('Invalid response format.');
         }
       } else {
-        print("API Error: ${response?.statusCode}");
         throw Exception('Unexpected error occurred.');
       }
     } catch (ex) {
-      print("Exception: $ex");
       throw Exception('Failed to fetch invoice details: ${ex.toString()}');
     }
   }

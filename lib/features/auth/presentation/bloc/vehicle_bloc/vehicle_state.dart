@@ -46,13 +46,18 @@ class VehicleLoading extends VehicleState {
 }
 
 class VehicleLoaded extends VehicleState {
-  final List<String> vehicles;
-  final List vehicleId;
+  final List<VehicleModel> vehicles;
 
-  const VehicleLoaded(this.vehicles, this.vehicleId);
+  const VehicleLoaded(this.vehicles);
+
+  List<String> get vehicleNames =>
+      vehicles.map((vehicle) => vehicle.branchName).toList();
+
+  List<int> get vehicleId =>
+      vehicles.map((vehicle) => vehicle.branchId).toList();
 
   @override
-  List<Object> get props => [vehicles,vehicleId];
+  List<Object> get props => [vehicles];
 }
 
 class VehicleError extends VehicleState {

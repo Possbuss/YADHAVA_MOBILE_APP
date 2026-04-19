@@ -1,24 +1,18 @@
 import 'dart:io';
 
 import 'package:Yadhava/core/util/local_db_helper.dart';
-import 'package:Yadhava/features/auth/presentation/widgets/custom_dropdown.dart';
 import 'package:Yadhava/features/auth/presentation/widgets/custom_textfield.dart';
-import 'package:Yadhava/features/splash/presentation/bloc/splash_bloc.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/color.dart';
 import '../../../home/presentation/pages/home_page.dart';
 // import '../../../home/presentation/pages/home_screen.dart';
 
 import '../../../splash/data/getall_company_model.dart';
-import '../../../splash/domain/repository.dart';
 import '../../domain/login_repo.dart';
 import '../bloc/login_bloc/login_bloc.dart';
-import '../bloc/route_bloc/route_bloc.dart';
-import '../bloc/vehicle_bloc/vehicle_bloc.dart';
 import '../widgets/login_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,11 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String deviceId = "Fetching...";
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-  GetCompanyListRepo companyListRepo = GetCompanyListRepo();
-  GetLoginRepo loginRepo = GetLoginRepo();
-  int token = 0;
-  int vehiclesId = 0;
-  int routeId = 0;
+  final GetLoginRepo loginRepo = GetLoginRepo();
   @override
   void initState() {
 
@@ -103,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (Platform.isAndroid) {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      id = androidInfo.id ?? "Unknown"; // Android ID
+      id = androidInfo.id; // Android ID
     } else if (Platform.isIOS) {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
       id = iosInfo.identifierForVendor ?? "Unknown"; // iOS Device ID

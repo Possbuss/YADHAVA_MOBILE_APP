@@ -2,9 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/api_constants.dart';
-import '../../../core/util/session.dart';
-import '../../auth/data/login_model.dart';
-import '../../auth/domain/login_repo.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/util/api_query.dart';
 
 class ClientProfilePictureUploadResult {
   final String? profilePicUrl;
@@ -13,17 +12,14 @@ class ClientProfilePictureUploadResult {
 }
 
 class ClientProfilePictureRepo {
-  final Dio _dio = Dio();
-  final Session _session = Session();
-  final GetLoginRepo _loginRepo = GetLoginRepo();
+  final Dio _dio = ApiClient().dio;
+  final ApiQuery _apiQuery = ApiQuery();
 
   Future<ClientProfilePictureUploadResult> uploadProfilePicture({
     required int companyId,
     required int clientId,
     required XFile file,
   }) async {
-    final String token = await _session.tokenExpired();
-    final LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
     final String fileName = file.name.isNotEmpty
         ? file.name
         : 'client_$clientId.${_extensionFromPath(file.path)}';
@@ -38,16 +34,10 @@ class ClientProfilePictureRepo {
     });
 
     final response = await _dio.post(
-      '${ApiConstants.baseUrl}${ApiConstants.uploadClientProfilePic}',
+      ApiConstants.uploadClientProfilePic,
       data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'routeId': loginModel?.routeId ?? '',
-          'vehicleId': loginModel?.vehicleId ?? '',
-          'companyId': loginModel?.companyId ?? '',
-          'employeeId': loginModel?.employeeId ?? '',
-          'userId': loginModel?.userId ?? '',
+      options: await _apiQuery.authOptions(
+        extraHeaders: const {
           'Content-Type': 'multipart/form-data',
         },
       ),

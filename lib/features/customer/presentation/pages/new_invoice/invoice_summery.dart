@@ -1,241 +1,8 @@
-// import 'package:Yadhava/core/constants/color.dart';
-// import 'package:flutter/material.dart';
-//
-// class SummeryPage extends StatefulWidget {
-//   const SummeryPage({super.key});
-//
-//   @override
-//   State<SummeryPage> createState() => _SummeryPageState();
-// }
-//
-// class _SummeryPageState extends State<SummeryPage> {
-//   TextEditingController discountAmount=TextEditingController();
-//   TextEditingController paidAmountController=TextEditingController();
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colour.pBackgroundBlack,
-//       appBar: AppBar(
-//         backgroundColor: Colour.pBackgroundBlack,
-//         centerTitle: true,
-//         title:const Text("Invoice Summery",style: TextStyle(color: Colour.mediumGray),),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(15.0),
-//         child: Column(
-//           spacing: 10,
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: <Widget>[
-//            const SizedBox(height: 5,),
-//            SizedBox(
-//              height: MediaQuery.of(context).size.height*.3,
-//              // width: double.infinity,
-//              // decoration: BoxDecoration(
-//              //   color: Colour.lightblack,
-//              //   shape: BoxShape.rectangle,
-//              //   borderRadius: BorderRadius.circular(20)
-//              // ),
-//              child: Column(
-//                mainAxisAlignment: MainAxisAlignment.start,
-//                crossAxisAlignment: CrossAxisAlignment.start,
-//                spacing: 6,
-//                children: [
-//                  const Row(
-//                    spacing: 50,
-//                    children: [
-//                        Text(
-//                        'Net Amount',
-//                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//                      ),
-//                        Text(
-//                        ':',
-//                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//                      ),
-//                        Text(
-//                        ' 5000',
-//                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//                      ),
-//                    ],
-//                  ),
-//                  const Row(
-//                    spacing: 12,
-//                    children: [
-//                         Text(
-//                        'Previous Amount',
-//                        style: TextStyle(fontSize: 16,color: Colour.mediumGray ),
-//                      ),
-//                         Text(
-//                        ':',
-//                        style: TextStyle(fontSize: 16,color: Colour.mediumGray ),
-//                      ),
-//                         Text(
-//                        '500',
-//                        style: TextStyle(fontSize: 16,color: Colour.mediumGray ),
-//                      ),
-//                    ],
-//                  ),
-//                  Row(
-//                    children: [
-//                     const  Text(
-//                        'Amount To Be Paid',
-//                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//                      ),
-//                    const  Text(
-//                        ':',
-//                        style:  TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//                      ),
-//                      Text(
-//                        (500- (double.tryParse(paidAmountController.text) ?? 0.0)).toStringAsFixed(2),
-//                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//                      ),
-//                    ],
-//                  ),
-//                ],
-//              ),
-//            ),
-//             Container(
-//               height: MediaQuery.of(context).size.height*.3,
-//               width: double.infinity,
-//               decoration: BoxDecoration(
-//                   color: Colour.lightblack,
-//                   shape: BoxShape.rectangle,
-//                   borderRadius: BorderRadius.circular(20)
-//               ),
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
-//                 child: Column(
-//                   spacing: 6,
-//                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                   children: [
-//                     TextField(
-//                       style: const TextStyle(color: Colour.mediumGray),
-//                       keyboardType: TextInputType.number,
-//                       decoration: InputDecoration(
-//                         fillColor: Colour.blackgery,
-//                         filled: true,
-//                         labelText: 'Discount Amount',
-//                         labelStyle: const TextStyle(color: Colour.darkgrey),
-//                         hintText: 'Enter discount amount',
-//                         prefixIcon: const Icon(Icons.money_off),
-//
-//                         // Default border
-//                         border: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                           borderSide: const BorderSide(
-//                             color: Colors.grey,
-//                             width: 1.5,
-//                           ),
-//                         ),
-//
-//                         // Border when enabled but not focused
-//                         // enabledBorder: OutlineInputBorder(
-//                         //   borderRadius: BorderRadius.circular(12),
-//                         //   borderSide: const BorderSide(
-//                         //     color: Colors.blue,
-//                         //     width: 1.5,
-//                         //   ),
-//                         // ),
-//
-//                         // Border when focused
-//                         focusedBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                           borderSide: const BorderSide(
-//                             color: Colour.plightpurple,
-//                             width: 2,
-//                           ),
-//                         ),
-//
-//                         // Border when in error state
-//                         errorBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                           borderSide: const BorderSide(
-//                             color: Colors.red,
-//                             width: 1.5,
-//                           ),
-//                         ),
-//
-//                         // Border when focused in error state
-//                         // focusedErrorBorder: OutlineInputBorder(
-//                         //   borderRadius: BorderRadius.circular(12),
-//                         //   borderSide: const BorderSide(
-//                         //     color: Colors.red,
-//                         //     width: 2,
-//                         //   ),
-//                         // ),
-//                       ),
-//                       onChanged: (value) {
-//                         setState(() {
-//                           // discountAmount.text = double.tryParse(value) ?? 0.0;
-//                         });
-//                       },
-//                     ),
-//
-//                     TextField(
-//                       style:const TextStyle(color: Colour.mediumGray),
-//                       controller: paidAmountController,
-//                       keyboardType: TextInputType.number,
-//                       decoration:const InputDecoration(
-//                         labelStyle: TextStyle(color: Colour.darkgrey),
-//                         labelText: 'Paid Amount',
-//                         hintText: 'Enter paid amount',
-//                         prefixIcon: Icon(Icons.payment),
-//                       ),
-//                       onChanged: (value) {
-//                         setState(() {
-//                           // You can store and use this value to calculate remaining balance if necessary
-//                         });
-//                       },
-//                     ),
-//
-//                   ],
-//                 ),
-//               ),
-//             ),
-//
-//             const Text(
-//               'Total Amount: \$ 200',
-//               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colour.mediumGray),
-//             ),
-//             // Text(
-//             //   'Paid Amount: \$${paidAmountController.text.isNotEmpty ? paidAmountController.text : "0.00"}',
-//             //   style: const TextStyle(fontSize: 16,color: Colour.mediumGray),
-//             // ),
-//             SizedBox(
-//               height: MediaQuery.of(context).size.height*.01,
-//             ),
-//             Center(
-//               child: SizedBox(
-//                 width: MediaQuery.of(context).size.width*.8,
-//                 child: ElevatedButton(
-//                   style: ElevatedButton.styleFrom(
-//                     backgroundColor: Colour.plightpurple, // Background color
-//                     foregroundColor: Colors.white, // Text color
-//                     shape: RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.circular(20), // Rounded corners
-//                     ),
-//                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Button padding
-//                     elevation: 4, // Shadow size
-//                   ),
-//                   onPressed: () {
-//                     print('Button Pressed');
-//                   },
-//                   child: const Text('Save Invoice'),
-//                 ),
-//               ),
-//             )
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+import 'dart:math' as math;
 
 import 'package:Yadhava/core/constants/color.dart';
 import 'package:Yadhava/core/util/format_rupees.dart';
-import 'package:Yadhava/features/customer/presentation/bloc/client_bloc/client_list_bloc.dart';
-import 'package:Yadhava/features/customer/presentation/bloc/inovice_bloc/invoice_bloc.dart';
 import 'package:Yadhava/features/customer/presentation/pages/Invoice_pages/Invoice_page.dart';
-import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -253,8 +20,8 @@ import '../customer_details/model/order_model.dart';
 
 class SummeryPage extends StatefulWidget {
   final ClientModel client;
-
   final List selectedItemList;
+
   const SummeryPage({
     super.key,
     required this.selectedItemList,
@@ -268,75 +35,80 @@ class SummeryPage extends StatefulWidget {
 class _SummeryPageState extends State<SummeryPage> {
   final TextEditingController discountAmount = TextEditingController();
   final TextEditingController paidAmountController = TextEditingController();
-
   final DateFormat formatter = DateFormat('yyyy-MM-dd');
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   late String endDate;
   late String fromDate;
 
   int vehicleId = 0;
   int companyId = 0;
-  bool isDataFetched = false;
-  double netTotal = 0.0;
-  double amountToBePaid = 0;
   double previousAmount = 0.0;
-  double mediaHeight = 0.56;
-
-  double totalAmount = 0;
-  String selectedOption = "Cash";
-  bool credit = true;
+  double totalAmount = 0.0;
+  double discountedSubtotal = 0.0;
+  double totalTaxableAmount = 0.0;
+  double totalSgstAmount = 0.0;
+  double totalCgstAmount = 0.0;
+  double totalIgstAmount = 0.0;
+  double totalCessAmount = 0.0;
+  double roundOf = 0.0;
+  double netTotal = 0.0;
+  double amountToBePaid = 0.0;
+  String selectedOption = 'Cash';
   String paymentType = 'CASH';
-  final _formKey = GlobalKey<FormState>();
+  String invoiceType = 'SALES_INVOICE';
+  bool collectPayment = true;
+  bool _loadingDialogShown = false;
+  double? latitude;
+  double? longitude;
+  String locationStatus = 'Press the button to get location';
+  late final List<_TaxLineItem> _taxItems;
+
+  bool get isTaxInvoice => invoiceType == 'TAX_INVOICE';
+
+  double _round4(double value) => OrderModel.roundToFourDecimals(value);
+
+  double _computeRoundOf(double amount) {
+    return OrderModel.computeRoundOf(amount);
+  }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    previousAmount = widget.client.amount!;
+    previousAmount = widget.client.amount ?? 0.0;
+    _taxItems = widget.selectedItemList
+        .whereType<ProductItem>()
+        .map(_TaxLineItem.fromProductItem)
+        .toList();
     _getCurrentLocation();
-    calculation();
-
+    _recalculateTotals();
     fromDate = _getFromDate(15);
     endDate = _getEndDate();
     _getLoginResponse();
   }
 
-  calculation() {
-    int count = widget.selectedItemList.length;
-    for (int i = 0; i < count; i++) {
-      var item = widget.selectedItemList[i] as ProductItem;
-      print(item.totalRate);
-      totalAmount += item.totalRate;
-    }
-    netTotal = totalAmount;
-    amountToBePaid = netTotal + (widget.client.amount ?? 0);
-  }
-
-  double? latitude;
-  double? longitude;
-  String locationStatus = "Press the button to get location";
-
   Future<void> _getLoginResponse() async {
     try {
-      LoginModel? storedResponse = await GetLoginRepo().getUserLoginResponse();
+      final LoginModel? storedResponse =
+          await GetLoginRepo().getUserLoginResponse();
       if (storedResponse != null) {
-        this.vehicleId = storedResponse.vehicleId;
-        this.companyId = storedResponse.companyId;
+        vehicleId = storedResponse.vehicleId;
+        companyId = storedResponse.companyId;
       }
     } catch (e) {
       setState(() {
-        locationStatus = "Error fetching storedResponse: $e";
+        locationStatus = 'Error fetching storedResponse: $e';
       });
     }
   }
 
   Future<void> _getCurrentLocation() async {
     try {
-      bool isLocationServiceEnabled =
+      final bool isLocationServiceEnabled =
           await Geolocator.isLocationServiceEnabled();
       if (!isLocationServiceEnabled) {
         setState(() {
-          locationStatus = "Location services are disabled.";
+          locationStatus = 'Location services are disabled.';
         });
         return;
       }
@@ -346,7 +118,7 @@ class _SummeryPageState extends State<SummeryPage> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() {
-            locationStatus = "Location permission denied.";
+            locationStatus = 'Location permission denied.';
           });
           return;
         }
@@ -355,26 +127,70 @@ class _SummeryPageState extends State<SummeryPage> {
       if (permission == LocationPermission.deniedForever) {
         setState(() {
           locationStatus =
-              "Location permission permanently denied. Enable it from settings.";
+              'Location permission permanently denied. Enable it from settings.';
         });
         await openAppSettings();
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(
+      final Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
       setState(() {
         latitude = position.latitude;
         longitude = position.longitude;
-        locationStatus = "Latitude: $latitude, Longitude: $longitude";
+        locationStatus = 'Latitude: $latitude, Longitude: $longitude';
       });
     } catch (e) {
       setState(() {
-        locationStatus = "Error fetching location: $e";
+        locationStatus = 'Error fetching location: $e';
       });
     }
+  }
+
+  void _recalculateTotals() {
+    totalAmount = 0.0;
+    totalTaxableAmount = 0.0;
+    totalSgstAmount = 0.0;
+    totalCgstAmount = 0.0;
+    totalIgstAmount = 0.0;
+    totalCessAmount = 0.0;
+    roundOf = 0.0;
+
+    for (final _TaxLineItem item in _taxItems) {
+      totalAmount += item.lineTotal;
+    }
+    totalAmount = _round4(totalAmount);
+
+    final double discountValue = double.tryParse(discountAmount.text) ?? 0.0;
+    discountedSubtotal = _round4(math.max(0.0, totalAmount - discountValue));
+
+    for (final _TaxLineItem item in _taxItems) {
+      final double taxableAmount = totalAmount == 0
+          ? 0.0
+          : (item.lineTotal / totalAmount) * discountedSubtotal;
+      item.recalculate(
+          isTaxInvoice: isTaxInvoice, taxableAmount: taxableAmount);
+      totalTaxableAmount += item.taxableAmount;
+      totalSgstAmount += item.sgstAmount;
+      totalCgstAmount += item.cgstAmount;
+      totalIgstAmount += item.igstAmount;
+    }
+    totalTaxableAmount = _round4(totalTaxableAmount);
+    totalSgstAmount = _round4(totalSgstAmount);
+    totalCgstAmount = _round4(totalCgstAmount);
+    totalIgstAmount = _round4(totalIgstAmount);
+    totalCessAmount = _round4(totalCessAmount);
+
+    final double subtotal = _round4(totalTaxableAmount +
+        totalSgstAmount +
+        totalCgstAmount +
+        totalIgstAmount +
+        totalCessAmount);
+    roundOf = _computeRoundOf(subtotal);
+    netTotal = _round4(subtotal + roundOf);
+    amountToBePaid = _round4(netTotal + previousAmount);
   }
 
   String _getEndDate() {
@@ -387,15 +203,24 @@ class _SummeryPageState extends State<SummeryPage> {
   }
 
   @override
+  void dispose() {
+    discountAmount.dispose();
+    paidAmountController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocListener<AddItemBloc, AddItemState>(
       listener: (context, state) async {
         if (state is ItemPostedSuccess) {
-          // ✅ Refresh Client List
-
+          if (_loadingDialogShown) {
+            Navigator.of(context, rootNavigator: true).pop();
+            _loadingDialogShown = false;
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Saved Successfully"),
+              content: Text('Saved Successfully'),
               backgroundColor: Colors.green,
             ),
           );
@@ -408,10 +233,11 @@ class _SummeryPageState extends State<SummeryPage> {
                   partyId: widget.client.id,
                 ),
               ),
-              (route) => false, // Clear back stack
+              (route) => false,
             );
           }
         } else if (state is SalesInvoiceSaving) {
+          _loadingDialogShown = true;
           showDialog(
             barrierDismissible: false,
             context: context,
@@ -420,17 +246,15 @@ class _SummeryPageState extends State<SummeryPage> {
             ),
           );
         } else if (state is ItemsFetchErrorState) {
+          if (_loadingDialogShown) {
+            Navigator.of(context, rootNavigator: true).pop();
+            _loadingDialogShown = false;
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Failed: ${state.error}"),
+              content: Text('Failed: ${state.error}'),
               backgroundColor: Colors.red,
             ),
-          );
-        }
-
-        if (state is ItemsFetchErrorState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error), backgroundColor: Colors.red),
           );
         }
       },
@@ -440,21 +264,26 @@ class _SummeryPageState extends State<SummeryPage> {
           backgroundColor: Colour.pBackgroundBlack,
           centerTitle: true,
           title: const Text(
-            "Invoice Summery",
+            'Invoice Summery',
             style: TextStyle(color: Colour.mediumGray),
           ),
         ),
         body: Padding(
-          padding: const EdgeInsets.all(15.0),
+          padding: const EdgeInsets.all(15),
           child: SingleChildScrollView(
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildInvoiceTypeSection(),
+                  const SizedBox(height: 14),
+                  if (isTaxInvoice) ...[
+                    _buildTaxItemsSection(),
+                    const SizedBox(height: 14),
+                  ],
                   _buildSummarySection(),
-                  const SizedBox(height: 10),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 24),
                   _buildSaveButton(),
                 ],
               ),
@@ -465,8 +294,248 @@ class _SummeryPageState extends State<SummeryPage> {
     );
   }
 
+  Widget _buildInvoiceTypeSection() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colour.lightblack,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Invoice Type',
+            style: TextStyle(
+              color: Colour.pWhite,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SegmentedButton<String>(
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colour.plightpurple;
+                }
+                return Colour.blackgery;
+              }),
+              foregroundColor: WidgetStateProperty.all(Colour.pWhite),
+              side: WidgetStateProperty.all(
+                const BorderSide(color: Colour.darkgrey),
+              ),
+            ),
+            segments: const [
+              ButtonSegment<String>(
+                value: 'SALES_INVOICE',
+                label: Text('Sales Invoice'),
+              ),
+              ButtonSegment<String>(
+                value: 'TAX_INVOICE',
+                label: Text('Tax Invoice'),
+              ),
+            ],
+            selected: <String>{invoiceType},
+            onSelectionChanged: (Set<String> selection) {
+              setState(() {
+                invoiceType = selection.first;
+                _recalculateTotals();
+              });
+            },
+          ),
+          if (isTaxInvoice) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'GST is split equally into SGST and CGST as standard local tax calculation.',
+              style: TextStyle(color: Colour.mediumGray, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaxItemsSection() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colour.lightblack,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Product Tax Details',
+            style: TextStyle(
+              color: Colour.pWhite,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (int index = 0; index < _taxItems.length; index++) ...[
+            _buildTaxItemCard(_taxItems[index], index),
+            if (index != _taxItems.length - 1) const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaxItemCard(_TaxLineItem item, int index) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colour.blackgery,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.productName,
+            style: const TextStyle(
+              color: Colour.pWhite,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Base Amount: ${formatRupees(item.lineTotal)}',
+            style: const TextStyle(color: Colour.mediumGray),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            initialValue: item.gstPercentage == 0
+                ? ''
+                : item.gstPercentage.toStringAsFixed(2),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+            ],
+            style: const TextStyle(color: Colour.mediumGray),
+            decoration: InputDecoration(
+              fillColor: Colour.pBackgroundBlack,
+              filled: true,
+              labelText: 'GST %',
+              hintText: 'Example: 5, 12, 18',
+              prefixIcon: const Icon(Icons.percent, color: Colour.darkgrey),
+              labelStyle: const TextStyle(color: Colour.darkgrey),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: Colour.plightpurple, width: 2),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                item.gstPercentage = double.tryParse(value) ?? 0.0;
+                _recalculateTotals();
+              });
+            },
+          ),
+          const SizedBox(height: 10),
+          _buildSummaryRow('Taxable', formatRupees(item.taxableAmount)),
+          _buildSummaryRow(
+            'SGST (${item.sgstPercentage.toStringAsFixed(2)}%)',
+            formatRupees(item.sgstAmount),
+          ),
+          _buildSummaryRow(
+            'CGST (${item.cgstPercentage.toStringAsFixed(2)}%)',
+            formatRupees(item.cgstAmount),
+          ),
+          _buildSummaryRow('Line Total', formatRupees(item.netAmount)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummarySection() {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colour.lightblack,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSummaryRow('Total Item', _taxItems.length.toString()),
+          _buildSummaryRow('Total Amount', formatRupees(totalAmount)),
+          const SizedBox(height: 10),
+          _buildTextFieldDecimal(
+            controller: discountAmount,
+            label: 'Discount Amount',
+            hint: 'Enter discount amount',
+            icon: Icons.currency_rupee,
+            onChanged: (value) {
+              setState(_recalculateTotals);
+            },
+          ),
+          const SizedBox(height: 10),
+          _buildSummaryRow(
+            'Taxable Amount',
+            formatRupees(totalTaxableAmount),
+          ),
+          if (isTaxInvoice) ...[
+            _buildSummaryRow('SGST', formatRupees(totalSgstAmount)),
+            _buildSummaryRow('CGST', formatRupees(totalCgstAmount)),
+          ],
+          _buildSummaryRow('Round Off', formatRupees(roundOf)),
+          _buildSummaryRow('Net Total', formatRupees(netTotal), isBold: true),
+          _buildSummaryRow('Previous Balance', formatRupees(previousAmount)),
+          _buildSummaryRow(
+            'Amount to be Paid',
+            formatRupees(amountToBePaid),
+            isBold: true,
+          ),
+          const SizedBox(height: 10),
+          if (collectPayment) ...[
+            _buildTextFieldDecimal(
+              validator: (value) {
+                if (!collectPayment) {
+                  return null;
+                }
+                if (value == null || value.trim().isEmpty) {
+                  return 'Amount Required';
+                }
+                return null;
+              },
+              controller: paidAmountController,
+              label: 'Paid Amount',
+              hint: 'Enter paid amount',
+              icon: Icons.payment,
+            ),
+            const SizedBox(height: 10),
+          ],
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              const Text(
+                'Payment type:',
+                style: TextStyle(color: Colour.pWhite),
+              ),
+              _buildRadioButton('Cash'),
+              _buildRadioButton('Bank'),
+              _buildRadioButton('Credit'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRadioButton(String value) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Radio<String>(
           activeColor: Colour.pWhite,
@@ -475,112 +544,32 @@ class _SummeryPageState extends State<SummeryPage> {
           groupValue: selectedOption,
           onChanged: (newValue) {
             setState(() {
-              print('chk state');
-              newValue == 'Credit' ? credit = false : credit = true;
-              if (newValue == 'Credit') {
+              selectedOption = newValue!;
+              paymentType = newValue.toUpperCase();
+              collectPayment = newValue != 'Credit';
+              if (!collectPayment) {
                 paidAmountController.clear();
               }
-              selectedOption = newValue!;
-              //paidAmountController.clear();
-              paymentType = newValue.toUpperCase();
             });
           },
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
         ),
-        Text(value, style: const TextStyle(fontSize: 14, color: Colour.pWhite)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 14, color: Colour.pWhite),
+        ),
       ],
     );
   }
 
-  /// Summary Section
-  Widget _buildSummarySection() {
-    print(credit.toString());
-    //paidAmountController.clear();
-    return Container(
-      decoration: BoxDecoration(
-          color: Colour.lightblack,
-          shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.circular(20)),
-      height: MediaQuery.of(context).size.height * mediaHeight,
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          spacing: 5,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSummaryRow(
-                'Total Item', widget.selectedItemList.length.toString()),
-            _buildSummaryRow('Total Amount', formatRupees(totalAmount)),
-            const SizedBox(height: 10),
-            _buildTextFieldDecimal(
-              onChanged: (value) {
-                setState(() {
-                  // netTotal=totalAmount-double.parse(value);
-                  // amountToBePaid=netTotal+previousAmount;
-                  double discount = double.tryParse(value) ?? 0.0;
-                  netTotal = totalAmount - discount;
-                  amountToBePaid = netTotal + previousAmount;
-                });
-              },
-              controller: discountAmount,
-              label: 'Discount Amount',
-              hint: 'Enter discount amount',
-              icon: Icons.currency_rupee,
-            ),
-            const SizedBox(height: 10),
-            _buildSummaryRow('Net Total', formatRupees(netTotal)),
-            _buildSummaryRow(
-                'Previous Balance', formatRupees(widget.client.amount!)),
-            _buildSummaryRow('Amount to be Paid', formatRupees(amountToBePaid)),
-            const SizedBox(height: 10),
-            Visibility(
-              visible: credit,
-              child: _buildTextFieldDecimal(
-                validator: (value) {
-                  if (credit) {
-                    if (value == null || value.isEmpty) {
-                      setState(() {
-                        mediaHeight = 0.57;
-                      });
-                      return "Amount Required";
-                    }
-                  }
-                  return null;
-                },
-                controller: paidAmountController,
-                label: 'Paid Amount',
-                hint: 'Enter paid amount',
-                icon: Icons.payment,
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Text("Payment type:",
-                    style: TextStyle(color: Colour.pWhite)),
-                _buildRadioButton("Cash"),
-                _buildRadioButton("Bank"),
-                _buildRadioButton("Credit")
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Row for Summary Details
   Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Expanded(
-            flex: 3, // Adjust flex value based on alignment requirements
+            flex: 3,
             child: Text(
               label,
               style: TextStyle(
@@ -588,7 +577,6 @@ class _SummeryPageState extends State<SummeryPage> {
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
                 color: Colour.mediumGray,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           const Text(
@@ -609,7 +597,6 @@ class _SummeryPageState extends State<SummeryPage> {
                 color: Colour.mediumGray,
               ),
               textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -617,46 +604,8 @@ class _SummeryPageState extends State<SummeryPage> {
     );
   }
 
-  /// Custom TextField
-  Widget _buildTextField({
-    final String? Function(String?)? validator,
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    void Function(String)? onChanged,
-  }) {
-    return TextFormField(
-      validator: validator,
-      controller: controller,
-      style: const TextStyle(color: Colour.mediumGray),
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        fillColor: Colour.blackgery,
-        filled: true,
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: Colour.darkgrey),
-        labelStyle: const TextStyle(color: Colour.darkgrey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey, width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colour.plightpurple, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
-        ),
-      ),
-      onChanged: onChanged,
-    );
-  }
-
   Widget _buildTextFieldDecimal({
-    final String? Function(String?)? validator,
+    String? Function(String?)? validator,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -667,7 +616,7 @@ class _SummeryPageState extends State<SummeryPage> {
       validator: validator,
       controller: controller,
       style: const TextStyle(color: Colour.mediumGray),
-      keyboardType: TextInputType.number,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,4}')),
       ],
@@ -695,7 +644,6 @@ class _SummeryPageState extends State<SummeryPage> {
     );
   }
 
-  /// Save Button
   Widget _buildSaveButton() {
     return Center(
       child: SizedBox(
@@ -710,9 +658,9 @@ class _SummeryPageState extends State<SummeryPage> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             elevation: 4,
           ),
-          onPressed: () async {
+          onPressed: () {
             if (_formKey.currentState!.validate()) {
-              showPopup(context); // Show the confirmation popup
+              showPopup(context);
             }
           },
           child: const Text('Save Invoice'),
@@ -726,110 +674,204 @@ class _SummeryPageState extends State<SummeryPage> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text("Save Invoice"),
-          content: const Text("Do you want to save this invoice?"),
+          title: const Text('Save Invoice'),
+          content: const Text('Do you want to save this invoice?'),
           actions: [
-            // Cancel Button
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text(
-                "Cancel",
+                'Cancel',
                 style: TextStyle(color: Colour.pDeepDarkBlue),
               ),
             ),
-
-            // Save Button (Processes in the background)
             TextButton(
               onPressed: () async {
-                Navigator.of(dialogContext)
-                    .pop(); // Close the dialog immediately
+                Navigator.of(dialogContext).pop();
 
-                // Fetch added items
-                final items = context.read<AddItemBloc>().addedItems;
-
-                // Convert selected items to product list
-                List<Product> productList = widget.selectedItemList.map((item) {
-                  if (item is ProductItem) {
-                    return Product.fromJson({
-                      'siNo': 0,
-                      'productId': item.productId,
-                      'partNumber': item.partNumber.toString(),
-                      'productName': item.productName,
-                      'packingDescription': item.packingDescription,
-                      'packingId': item.packingId,
-                      'packingName': item.packingName,
-                      'quantity': item.quantity,
-                      'foc': int.tryParse(item.fac.toString() ?? '0') ?? 0,
-                      'totalQty': item.quantity,
-                      'unitRate':
-                          double.tryParse(item.sell?.toString() ?? '0.0') ??
-                              0.0,
-                      'totalRate': item.totalRate,
-                      'srtQty': int.tryParse(item.srt?.toString() ?? '0') ?? 0,
-                      'uom': item.uom?.toString() ?? '',
-                    });
-                  }
-                  throw Exception("Invalid type");
-                }).toList();
-
-                // Calculate discount details
-                double discountAmt = double.tryParse(discountAmount.text) ?? 0;
-                double discountPercentage = (discountAmt / totalAmount) * 100;
-
-                // Get stored user data
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                String currentDate =
+                final double discountAmt =
+                    _round4(double.tryParse(discountAmount.text) ?? 0.0);
+                final double discountPercentage = _round4(
+                  totalAmount == 0 ? 0.0 : (discountAmt / totalAmount) * 100,
+                );
+                final SharedPreferences prefs =
+                    await SharedPreferences.getInstance();
+                final String currentDate =
                     DateFormat('yyyy-MM-dd').format(DateTime.now());
-                String transactionYear =
+                final String transactionYear =
                     DateFormat('yyyy').format(DateTime.now());
-                LoginModel? storedResponse =
+                final LoginModel? storedResponse =
                     await GetLoginRepo().getUserLoginResponse();
 
-                // Prepare order model
-                OrderModel order = OrderModel(
+                if (storedResponse == null) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('User details not available'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                final List<Product> productList =
+                    _taxItems.asMap().entries.map((entry) {
+                  final int index = entry.key;
+                  final _TaxLineItem item = entry.value;
+                  return Product(
+                    orderId: 0,
+                    siNo: index + 1,
+                    productId: item.item.productId,
+                    partNumber: item.item.partNumber,
+                    productName: item.item.productName,
+                    packingDescription: item.item.packingDescription,
+                    packingId: item.item.packingId,
+                    packingName: item.item.packingName,
+                    quantity: item.item.quantity,
+                    foc: item.item.fac,
+                    srtQty: item.item.srt,
+                    totalQty: item.item.quantity,
+                    companyId: storedResponse.companyId,
+                    clientId: widget.client.id ?? 0,
+                    invoiceId: 0,
+                    unitRate: double.tryParse(item.item.sell) ?? 0.0,
+                    totalRate: item.lineTotal,
+                    gstPercentage: item.gstPercentage,
+                    sgstPercentage: item.sgstPercentage,
+                    cgstPercentage: item.cgstPercentage,
+                    igstPercentage: item.igstPercentage,
+                    cessPercentage: 0.0,
+                    taxableAmount: item.taxableAmount,
+                    sgstAmount: item.sgstAmount,
+                    cgstAmount: item.cgstAmount,
+                    igstAmount: item.igstAmount,
+                    cessAmount: 0.0,
+                    netAmount: item.netAmount,
+                  );
+                }).toList();
+
+                final OrderModel order = OrderModel(
                   id: 0,
                   uuid: '',
-                  paidAmount: paidAmountController.text.isEmpty
-                      ? 0
-                      : double.parse(paidAmountController.text),
-                  companyId: storedResponse!.companyId,
+                  companyId: storedResponse.companyId,
                   invoiceId: 0,
-                  clientId: widget.client.id!,
-                  clientName: widget.client.name!,
+                  clientId: widget.client.id ?? 0,
+                  clientName: widget.client.name ?? '',
                   driverId: storedResponse.employeeId,
                   driverName: storedResponse.userName,
                   payType: paymentType.toUpperCase(),
                   invoiceNo: '',
                   invoiceDate: currentDate,
+                  receiptNo: '',
                   routeId: storedResponse.routeId,
                   vehicleId: storedResponse.vehicleId,
                   vehicleNo: prefs.getString('selected_vehicle') ?? '',
-                  total: totalAmount,
+                  invoiceType: invoiceType,
+                  total: _round4(totalAmount),
                   discountPercentage: discountPercentage,
                   discountAmount: discountAmt,
-                  netTotal: netTotal,
+                  totalTaxableAmount: _round4(totalTaxableAmount),
+                  totalSgstAmount: _round4(totalSgstAmount),
+                  totalCgstAmount: _round4(totalCgstAmount),
+                  totalIgstAmount: _round4(totalIgstAmount),
+                  totalCessAmount: _round4(totalCessAmount),
+                  roundOf: _round4(roundOf),
+                  netTotal: _round4(netTotal),
                   transactionYear: int.parse(transactionYear),
-                  latitude: latitude ?? 00,
-                  longitude: longitude ?? 00,
+                  latitude: _round4(latitude ?? 0),
+                  longitude: _round4(longitude ?? 0),
+                  paidAmount: paidAmountController.text.isEmpty
+                      ? 0.0
+                      : _round4(double.parse(paidAmountController.text)),
                   mobileAppSalesInvoiceDetails: productList,
                 );
 
-                // final clientListBloc = context.read<ClientListBloc>();
-                // final homeBloc = context.read<HomeBloc>();
-                final addItemBloc = context.read<AddItemBloc>();
-
-                addItemBloc.add(PostAddedItems(order));
-
-                print('Save process completed');
+                if (context.mounted) {
+                  context.read<AddItemBloc>().add(PostAddedItems(order));
+                }
               },
               child: const Text(
-                "Save",
+                'Save',
                 style: TextStyle(color: Colour.pDeepDarkBlue),
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _TaxLineItem {
+  final ProductItem item;
+  double gstPercentage;
+  double sgstPercentage;
+  double cgstPercentage;
+  double igstPercentage;
+  double taxableAmount;
+  double sgstAmount;
+  double cgstAmount;
+  double igstAmount;
+  double netAmount;
+
+  _TaxLineItem({
+    required this.item,
+    required this.gstPercentage,
+    required this.sgstPercentage,
+    required this.cgstPercentage,
+    required this.igstPercentage,
+    required this.taxableAmount,
+    required this.sgstAmount,
+    required this.cgstAmount,
+    required this.igstAmount,
+    required this.netAmount,
+  });
+
+  factory _TaxLineItem.fromProductItem(ProductItem item) {
+    return _TaxLineItem(
+      item: item,
+      gstPercentage: 0.0,
+      sgstPercentage: 0.0,
+      cgstPercentage: 0.0,
+      igstPercentage: 0.0,
+      taxableAmount: item.totalRate,
+      sgstAmount: 0.0,
+      cgstAmount: 0.0,
+      igstAmount: 0.0,
+      netAmount: item.totalRate,
+    );
+  }
+
+  String get productName => item.productName;
+  double get lineTotal => item.totalRate;
+
+  void recalculate({
+    required bool isTaxInvoice,
+    required double taxableAmount,
+  }) {
+    this.taxableAmount = OrderModel.roundToFourDecimals(taxableAmount);
+    if (!isTaxInvoice) {
+      sgstPercentage = 0.0;
+      cgstPercentage = 0.0;
+      igstPercentage = 0.0;
+      sgstAmount = 0.0;
+      cgstAmount = 0.0;
+      igstAmount = 0.0;
+      netAmount = OrderModel.roundToFourDecimals(this.taxableAmount);
+      return;
+    }
+
+    final double localHalf = OrderModel.roundToFourDecimals(gstPercentage / 2);
+    sgstPercentage = localHalf;
+    cgstPercentage = localHalf;
+    igstPercentage = 0.0;
+    sgstAmount = OrderModel.roundToFourDecimals(
+        this.taxableAmount * sgstPercentage / 100);
+    cgstAmount = OrderModel.roundToFourDecimals(
+        this.taxableAmount * cgstPercentage / 100);
+    igstAmount = 0.0;
+    netAmount = OrderModel.roundToFourDecimals(
+      this.taxableAmount + sgstAmount + cgstAmount,
     );
   }
 }

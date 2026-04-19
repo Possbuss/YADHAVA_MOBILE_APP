@@ -1,6 +1,6 @@
 import 'package:Yadhava/features/home/data/home_data.dart';
 import 'package:Yadhava/features/home/domain/homerepo.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -26,11 +26,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       final db = LocalDbHelper();
       bool isLocalEmpty = await db.isEmptySalesTransactions();
-      print(isLocalEmpty);
-      print('fetchMobileAppSalesDashBoardHome');
 
       if (!isLocalEmpty && event.forceRefresh == false) {
-        print('data from local db');
         final tranCreditDetails = await db.getCashCreditDetails();
         final tranCashSummary = await db.getCashSummary();
         final tranCreditSummary = await db.getCreditSummary();
@@ -38,7 +35,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         final tranSalesSummary = await db.getSalesSummary();
         final tranTransactions = await db.getTransactions();
 
-        var dashBoardDt = new MobileAppSalesDashBoardHome(
+        var dashBoardDt = MobileAppSalesDashBoardHome(
             mobileAppStockBalanceVans: tranProductStocks,
             mobileAppSales: tranSalesSummary,
             mobileAppSalesCash: tranCashSummary,
@@ -50,13 +47,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         emit(HomeStateLoaded(homeData: _mobileAppSalesDashBoardHome));
         return;
       } else {
-        print('ddddd');
-        print(event.date);
         final response = await homeRepository.fetchMobileAppSalesDashBoardHome(
           date: event.date,
         );
 
-        print('working');
         if (response!.statusCode == 200 || response.statusCode == 201) {
           _mobileAppSalesDashBoardHome =
               MobileAppSalesDashBoardHome.fromJson(response.data);

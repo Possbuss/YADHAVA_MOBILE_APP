@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:Yadhava/core/util/local_db_helper.dart';
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/getall_company_model.dart';
 import '../../domain/repository.dart';
@@ -25,22 +25,12 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     try {
 
 
-      var db = new LocalDbHelper();
+      var db = LocalDbHelper();
       if (await db.isEmptyCompany()){
-        final response = await companyListRepo.getCompanyListRepo();
-        if (response!.statusCode == 200 || response.statusCode == 201){
-          print(response.data.runtimeType);
-          final data = response.data as List<dynamic>;
-          final companies =
-          data.map((e) => GetAllCompanyModel.fromJson(e)).toList();
-          await companyListRepo.storeCompanyDetails(companies);
-          await db.insertCompany(companies);
-          emit(SplashLoaded(companies));
-
-        }else {
-          emit(SplashError(
-              'Failed to fetch company data. Status code: ${response.statusCode}'));
-        }
+        final companies = await companyListRepo.getCompanyListRepo();
+        await companyListRepo.storeCompanyDetails(companies);
+        await db.insertCompany(companies);
+        emit(SplashLoaded(companies));
       }
       else{
         final companies = await db.getAllCompany();

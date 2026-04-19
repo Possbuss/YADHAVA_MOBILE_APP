@@ -92,68 +92,82 @@ class InvoiceRepository {
   final ApiQuery apiQuery = ApiQuery();
   final Session session = Session();
 
+  double _round4(double value) =>
+      value.isFinite ? double.parse(value.toStringAsFixed(4)) : 0.0;
+
   Future<bool?> updateInvoice(MobileAppSalesInvoiceMaster invoice) async {
-
     try {
-
       String token = await session.tokenExpired();
       final Map<String, dynamic> data = _mapInvoiceToJson(invoice);
       final Response? response = await apiQuery.postQuery(
           ApiConstants.updateSalesInvoice, token, data);
 
       if (response != null && response.statusCode == 200) {
-
         final responseData = response.data; // No need to decode
         log(responseData['result'].toString());
 
-          var responseMessageMobileSalesInvoice =
-          ResponseMessageMobileSalesInvoice.fromJson(response.data);
+        var responseMessageMobileSalesInvoice =
+            ResponseMessageMobileSalesInvoice.fromJson(response.data);
 
-          if(responseMessageMobileSalesInvoice.result){
+        if (responseMessageMobileSalesInvoice.result) {
+          var db = LocalDbHelper();
 
-            var db = LocalDbHelper();
+          if (responseMessageMobileSalesInvoice.mobileAppSalesInvoiceAll!
+              .mobileAppSalesInvoiceMaster!.isNotEmpty) {
+            await db.clearInvoiceTablesByInvoiceNo(
+                invoice.invoiceNo, invoice.companyId);
 
-            if(responseMessageMobileSalesInvoice.mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMaster!.isNotEmpty){
-
-              await db.clearInvoiceTablesByInvoiceNo(invoice.invoiceNo,invoice.companyId);
-
-              await db.insertInvoices(responseMessageMobileSalesInvoice.mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMaster,
-                  responseMessageMobileSalesInvoice.mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMasterDt);
-
-            }
-
-            await db.clearTransactions();
-            await db.insertTransactions(responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome?.mobileAppSalesDashBoard);
-
-            await db.clearProductStocks();
-            await db.insertProductStocks(responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome?.mobileAppStockBalanceVans);
-
-            await db.clearSalesSummary();
-            await db.insertSalesSummary(responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome?.mobileAppSales);
-
-            await db.clearCreditSummary();
-            await db.insertCreditSummary(responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome?.mobileAppSalesCredit);
-
-            await db.clearCashSummary();
-            await db.insertCashSummary(responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome?.mobileAppSalesCash);
-
-            await db.clearCashCreditDetails();
-            await db.insertCashCreditDetails(responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome?.salesInvoiceCollectionCreditCashCustomerImports);
-
-
-            await db.updateClients(responseMessageMobileSalesInvoice.clientModel,invoice.clientId);
-            await db.updateLastInvoiceData(responseMessageMobileSalesInvoice.lastInvoiceModel, invoice.clientId, invoice.companyId);
-            await db.updateRouteHistory(responseMessageMobileSalesInvoice.routeHistory, invoice.routeId, invoice.companyId);
-            await db.updateRouteHistoryDetails(responseMessageMobileSalesInvoice.routeDetails, invoice.invoiceDate, invoice.routeId, invoice.companyId);
-
-
+            await db.insertInvoices(
+                responseMessageMobileSalesInvoice
+                    .mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMaster,
+                responseMessageMobileSalesInvoice
+                    .mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMasterDt);
           }
 
+          await db.clearTransactions();
+          await db.insertTransactions(responseMessageMobileSalesInvoice
+              .mobileAppSalesDashBoardHome?.mobileAppSalesDashBoard);
+
+          await db.clearProductStocks();
+          await db.insertProductStocks(responseMessageMobileSalesInvoice
+              .mobileAppSalesDashBoardHome?.mobileAppStockBalanceVans);
+
+          await db.clearSalesSummary();
+          await db.insertSalesSummary(responseMessageMobileSalesInvoice
+              .mobileAppSalesDashBoardHome?.mobileAppSales);
+
+          await db.clearCreditSummary();
+          await db.insertCreditSummary(responseMessageMobileSalesInvoice
+              .mobileAppSalesDashBoardHome?.mobileAppSalesCredit);
+
+          await db.clearCashSummary();
+          await db.insertCashSummary(responseMessageMobileSalesInvoice
+              .mobileAppSalesDashBoardHome?.mobileAppSalesCash);
+
+          await db.clearCashCreditDetails();
+          await db.insertCashCreditDetails(responseMessageMobileSalesInvoice
+              .mobileAppSalesDashBoardHome
+              ?.salesInvoiceCollectionCreditCashCustomerImports);
+
+          await db.updateClients(
+              responseMessageMobileSalesInvoice.clientModel, invoice.clientId);
+          await db.updateLastInvoiceData(
+              responseMessageMobileSalesInvoice.lastInvoiceModel,
+              invoice.clientId,
+              invoice.companyId);
+          await db.updateRouteHistory(
+              responseMessageMobileSalesInvoice.routeHistory,
+              invoice.routeId,
+              invoice.companyId);
+          await db.updateRouteHistoryDetails(
+              responseMessageMobileSalesInvoice.routeDetails,
+              invoice.invoiceDate,
+              invoice.routeId,
+              invoice.companyId);
+        }
+
         return responseData['result'] ?? false;
-
-
-
-}else if (response != null) {
+      } else if (response != null) {
         throw Exception('Failed with status: ${response.statusCode}');
       } else {
         throw Exception('No response received from the server.');
@@ -165,50 +179,69 @@ class InvoiceRepository {
 
   Map<String, dynamic> _mapInvoiceToJson(MobileAppSalesInvoiceMaster invoice) {
     return {
-      "paidAmount":invoice.paidAmount,
-      "companyId": invoice.companyId,
-      "invoiceId": invoice.invoiceId,
-      "clientId": invoice.clientId,
-      "clientName": invoice.clientName,
-      "driverId": invoice.salesManId,
-      "driverName": invoice.salesManName,
-      "payType": invoice.payType,
-      "invoiceNo": invoice.invoiceNo,
-      "invoiceDate": invoice.invoiceDate,
-      "total": invoice.totalAmount,
-      "routeId": invoice.routeId,
-      "vehicleId": invoice.branchId,
-      "vehicleNo": invoice.branchName,
-      "netTotal": invoice.netTotal,
-      "discountAmount": invoice.totalDiscountVal,
-      "discountPercentage": invoice.totalDiscountPer,
-      "transactionYear": DateTime.now().year,
-      "latitude": 0,
-      "longitude": 0,
+      "CompanyId": invoice.companyId,
+      "InvoiceId": invoice.invoiceId,
+      "ClientId": invoice.clientId,
+      "ClientName": invoice.clientName,
+      "DriverId": invoice.salesManId,
+      "DriverName": invoice.salesManName,
+      "PayType": invoice.payType,
+      "InvoiceNo": invoice.invoiceNo,
+      "InvoiceDate": invoice.invoiceDate,
+      "RouteId": invoice.routeId,
+      "VehicleId": invoice.branchId,
+      "VehicleNo": invoice.branchName,
+      "Total": _round4(invoice.totalAmount),
+      "DiscountPercentage": _round4(invoice.totalDiscountPer),
+      "DiscountAmount": _round4(invoice.totalDiscountVal),
+      "TotalTaxableAmount": _round4(invoice.totalTaxableAmount),
+      "TotalCgstAmount": _round4(invoice.totalCgstAmount),
+      "TotalSgstAmount": _round4(invoice.totalSgstAmount),
+      "TotalIgstAmount": _round4(invoice.totalIgstAmount),
+      "TotalCessAmount": _round4(invoice.totalCessAmount),
+      "RoundOf": _round4(invoice.roundOf),
+      "NetTotal": _round4(invoice.netTotal),
+      "PaidAmount": _round4(invoice.paidAmount),
+      "ReceiptNo": invoice.receiptNo,
+      "IsGstBill": invoice.invoiceType == 'TAX_INVOICE' ? 'Y' : 'N',
+      "InvoiceType": invoice.invoiceType == 'TAX_INVOICE'
+          ? 'Tax Invoice'
+          : 'Sales Invoice',
+      "TransactionYear": DateTime.now().year,
+      "Latitude": 0,
+      "Longitude": 0,
+      "uuid": invoice.uuid,
       "mobileAppSalesInvoiceDetails": invoice.details.map((detail) {
         return {
-          "siNo": detail.siNo,
-          "productId": detail.productId,
-          "partNumber": detail.partNumber,
-          "productName": detail.productName,
-          "packingDescription": detail.productName,
-          "packingId": detail.packingId,
-          "packingName": detail.packingName,
-          "quantity": detail.quantity,
-          "foc": detail.foc,
-          "srtQty": detail.srtQty,
-          "totalQty": detail.totalQty,
-          "unitRate": detail.unitRate,
-          "totalRate": detail.totalRate,
+          "SiNo": detail.siNo,
+          "ProductId": detail.productId,
+          "PartNumber": detail.partNumber,
+          "ProductName": detail.productName,
+          "PackingDescription": detail.productName,
+          "PackingId": detail.packingId,
+          "PackingName": detail.packingName,
+          "Quantity": _round4(detail.quantity),
+          "Foc": _round4(detail.foc),
+          "TotalQty": _round4(detail.totalQty),
+          "SrtQty": _round4(detail.srtQty),
+          "UnitRate": _round4(detail.unitRate),
+          "TotalRate": _round4(detail.totalRate),
+          "TaxPercentage": _round4(detail.gstPercentage),
+          "TaxableRate": _round4(detail.taxableAmount),
+          "IgstPercentage": _round4(detail.igstPercentage),
+          "IgstAmount": _round4(detail.igstAmount),
+          "CgstPercentage": _round4(detail.cgstPercentage),
+          "CgstAmount": _round4(detail.cgstAmount),
+          "SgstPercentage": _round4(detail.sgstPercentage),
+          "SgstAmount": _round4(detail.sgstAmount),
+          "CessPercentage": _round4(detail.cessPercentage),
+          "CessAmount": _round4(detail.cessAmount),
+          "NetRate": _round4(detail.netAmount),
+          "CompanyId": detail.companyId,
+          "ClientId": detail.clientId,
+          "InvoiceId": detail.invoiceId,
         };
       }).toList(),
     };
-
-
-    
   }
 }
-
-
-
-

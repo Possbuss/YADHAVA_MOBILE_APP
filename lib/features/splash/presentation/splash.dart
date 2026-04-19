@@ -17,8 +17,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  Session session = Session();
-  GetLoginRepo userRepo = GetLoginRepo();
+  final Session session = Session();
+  final GetLoginRepo userRepo = GetLoginRepo();
 
   // String token='';
   @override
@@ -33,8 +33,10 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> checkLoginStatus() async {
     try {
       LoginModel? responseModel = await userRepo.getUserLoginResponse();
+      if (!mounted) return;
       if (responseModel != null) {
         String token = await session.tokenExpired();
+        if (!mounted) return;
         if (token.isEmpty) {
           await Logoutrepo().logout(context);
           return;
@@ -69,8 +71,6 @@ class _SplashScreenState extends State<SplashScreen> {
             if (state is SplashLoading) {
               return Center(child: Image.asset("assets/images/appLogo.jpeg"));
             } else if (state is SplashLoaded) {
-              var data = state.companyList;
-              print(data.length);
               return Center(child: Image.asset("assets/images/appLogo.jpeg"));
             } else if (state is SplashError) {
               return const Icon(Icons.error);

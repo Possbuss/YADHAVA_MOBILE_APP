@@ -1,69 +1,60 @@
-// ignore_for_file: non_constant_identifier_names
-
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/data/auth_storage.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/util/api_query.dart';
 import '../data/login_model.dart';
 
 class GetLoginRepo{
-   final ApiQuery apiQuery=ApiQuery();
+   static final GetLoginRepo _instance = GetLoginRepo._internal();
 
-   Future<Response?>LoginRepo(
+   factory GetLoginRepo() => _instance;
+
+   GetLoginRepo._internal();
+
+   final ApiQuery apiQuery=ApiQuery();
+   final AuthStorage _authStorage = AuthStorage();
+
+   Future<LoginModel> loginRepo(
        Map<String,dynamic>data
        )async{
       try {
-         Response? response = await apiQuery.postQueryWithoutToken(
+         final Response? response = await apiQuery.postQueryWithoutToken(
              ApiConstants.login, data);
-         return response;
-      }catch(ex){
-         Exception(ex);
+         if (response == null || response.statusCode != 200) {
+            throw Exception('Unexpected login response.');
+         }
+
+         final dynamic rawData = response.data;
+         if (rawData is! List || rawData.isEmpty || rawData.first is! Map<String, dynamic>) {
+            throw Exception('Invalid login response format.');
+         }
+
+         return LoginModel.fromJson(rawData.first as Map<String, dynamic>);
+      } catch (ex) {
+         throw Exception('Login failed: $ex');
       }
-      return null;
    }
 
    /// login
 
-   storeUserLoginResponse(LoginModel userData) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String userProfileJson = json.encode(userData.toJson());
-      prefs.setString("USER_LOGIN_RESPONSE", userProfileJson);
-   }
+   Future<void> storeUserLoginResponse(LoginModel userData) =>
+       _authStorage.storeLogin(userData);
 
-   Future<LoginModel?> getUserLoginResponse() async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      if (prefs.getString("USER_LOGIN_RESPONSE") == null) {
-         return null;
-      } else {
-         String? userResponse = prefs.getString("USER_LOGIN_RESPONSE");
-         return LoginModel.fromJson(json.decode(userResponse!));
-      }
-   }
+   Future<LoginModel?> getUserLoginResponse() => _authStorage.getLogin();
+
    Future<void> clearUserLoginResponse() async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove("USER_LOGIN_RESPONSE");
-      await prefs.clear();
+      await _authStorage.clearLogin();
    }
 
 
    /// psd
 
-   Future<void> storeStringValue(String key, String value) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString(key, value);
-   }
+   Future<void> storeStringValue(String key, String value) =>
+       _authStorage.storeString(key, value);
 
-   Future<String?> getStringValue(String key) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      return prefs.getString(key);
-   }
+   Future<String?> getStringValue(String key) => _authStorage.getString(key);
 
-   Future<void> clearStringValue(String key) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove(key);
-   }
+   Future<void> clearStringValue(String key) => _authStorage.clearString(key);
 
 }

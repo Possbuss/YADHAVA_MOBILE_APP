@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String profileImagePath = '';
   String profileImageValue = '';
 
-  GetLoginRepo loginRepo = GetLoginRepo();
+  final GetLoginRepo loginRepo = GetLoginRepo();
   final MobileAppUserProfileRepo _profileRepo = MobileAppUserProfileRepo();
   @override
   initState() {

@@ -15,6 +15,23 @@ class InvoicePrintHelper {
     await OpenFile.open(file.path);
   }
 
+  static bool _isTaxInvoice(String invoiceType) {
+    final String normalized = invoiceType
+        .trim()
+        .toUpperCase()
+        .replaceAll(' ', '_')
+        .replaceAll('-', '_');
+    return normalized == 'TAX_INVOICE';
+  }
+
+  static double _displayTaxPercentage(MobileAppSalesInvoiceMasterDt item) {
+    final double combinedLocalTax = item.sgstPercentage + item.cgstPercentage;
+    if (combinedLocalTax > 0) {
+      return combinedLocalTax;
+    }
+    return item.gstPercentage;
+  }
+
   static Future<File> _generateInvoicePdf(
     MobileAppSalesInvoiceMaster invoice,
   ) async {
@@ -25,9 +42,10 @@ class InvoicePrintHelper {
         .load('assets/images/appLogo-removebg-preview.png')
         .then((value) => value.buffer.asUint8List());
     final pw.ImageProvider logoImage = pw.MemoryImage(logoBytes);
+    final bool isTaxInvoice = _isTaxInvoice(invoice.invoiceType);
 
     final tableData = invoice.details.map((e) {
-      return [
+      final List<String> row = [
         e.productName,
         e.partNumber,
         e.quantity.toStringAsFixed(2),
@@ -37,11 +55,18 @@ class InvoicePrintHelper {
         e.unitRate.toStringAsFixed(2),
         e.totalRate.toStringAsFixed(2),
       ];
+      if (isTaxInvoice) {
+        row.add(_displayTaxPercentage(e).toStringAsFixed(2));
+        row.add(e.sgstAmount.toStringAsFixed(2));
+        row.add(e.cgstAmount.toStringAsFixed(2));
+        row.add(e.netAmount.toStringAsFixed(2));
+      }
+      return row;
     }).toList();
 
     final company = companyList.isNotEmpty ? companyList.first : null;
-    final bool showPaidAmount = invoice.payType.toUpperCase() != 'CREDIT' &&
-        invoice.paidAmount > 0;
+    final bool showPaidAmount =
+        invoice.payType.toUpperCase() != 'CREDIT' && invoice.paidAmount > 0;
 
     pdf.addPage(
       pw.MultiPage(
@@ -57,7 +82,7 @@ class InvoicePrintHelper {
                   children: [
                     pw.SizedBox(height: 5),
                     pw.Text(
-                      'INVOICE',
+                      isTaxInvoice ? 'TAX INVOICE' : 'INVOICE',
                       style: pw.TextStyle(
                         fontSize: 28,
                         fontWeight: pw.FontWeight.bold,
@@ -105,6 +130,13 @@ class InvoicePrintHelper {
                       'Payment Type: ${invoice.payType}',
                       style: const pw.TextStyle(fontSize: 12),
                     ),
+                    if (isTaxInvoice) ...[
+                      pw.SizedBox(height: 5),
+                      pw.Text(
+                        'Invoice Type: Tax Invoice',
+                        style: const pw.TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -149,7 +181,7 @@ class InvoicePrintHelper {
           if (company != null) pw.SizedBox(height: 8),
           if (company != null) pw.Divider(color: PdfColors.grey300),
           pw.TableHelper.fromTextArray(
-            headers: const [
+            headers: [
               'Product',
               'Code',
               'Qty',
@@ -158,6 +190,10 @@ class InvoicePrintHelper {
               'UOM',
               'Unit Rate',
               'Total',
+              if (isTaxInvoice) 'GST %',
+              if (isTaxInvoice) 'SGST',
+              if (isTaxInvoice) 'CGST',
+              if (isTaxInvoice) 'Net',
             ],
             data: tableData,
             headerStyle: pw.TextStyle(
@@ -179,6 +215,10 @@ class InvoicePrintHelper {
               5: const pw.FlexColumnWidth(1),
               6: const pw.FlexColumnWidth(2),
               7: const pw.FlexColumnWidth(2),
+              if (isTaxInvoice) 8: const pw.FlexColumnWidth(1.2),
+              if (isTaxInvoice) 9: const pw.FlexColumnWidth(1.6),
+              if (isTaxInvoice) 10: const pw.FlexColumnWidth(1.6),
+              if (isTaxInvoice) 11: const pw.FlexColumnWidth(1.8),
             },
             border: pw.TableBorder.all(
               width: 0.5,
@@ -198,6 +238,27 @@ class InvoicePrintHelper {
                     'Discount',
                     invoice.totalDiscountVal.toStringAsFixed(2),
                   ),
+                ],
+                if (isTaxInvoice) ...[
+                  pw.SizedBox(height: 5),
+                  _summaryLine(
+                    'Taxable',
+                    invoice.totalTaxableAmount.toStringAsFixed(2),
+                  ),
+                  pw.SizedBox(height: 5),
+                  _summaryLine(
+                    'SGST',
+                    invoice.totalSgstAmount.toStringAsFixed(2),
+                  ),
+                  pw.SizedBox(height: 5),
+                  _summaryLine(
+                    'CGST',
+                    invoice.totalCgstAmount.toStringAsFixed(2),
+                  ),
+                ],
+                if (invoice.roundOf != 0) ...[
+                  pw.SizedBox(height: 5),
+                  _summaryLine('Round Off', invoice.roundOf.toStringAsFixed(2)),
                 ],
                 pw.SizedBox(height: 5),
                 _summaryLine('Net Total', invoice.netTotal.toStringAsFixed(2)),

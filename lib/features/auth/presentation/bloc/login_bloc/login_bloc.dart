@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:bloc/bloc.dart';
-import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/login_model.dart';
 import '../../../domain/login_repo.dart';
@@ -24,25 +23,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     emit(LoginLoading());
 
     try {
-      final Response? response = await loginRepo.LoginRepo(event.loginData);
-
-      if (response != null && response.statusCode == 200) {
-        List responseData = response.data;
-        print(responseData.runtimeType);
-        LoginModel data=LoginModel.fromJson(responseData.first);
-        if(data.loginMessage=='SUCCESS'){
-          print(data.runtimeType);
-          await loginRepo.storeUserLoginResponse(data);
-          LoginModel? storedResponse = await loginRepo.getUserLoginResponse();
-          print(storedResponse!.companyId);
-          log(storedResponse.tokken);
-          emit(LoginLoaded(response.data));
-        }else{
-          emit(LoginError(data.loginMessage));
-        }
-
+      final LoginModel loginModel = await loginRepo.loginRepo(event.loginData);
+      if(loginModel.loginMessage=='SUCCESS'){
+        await loginRepo.storeUserLoginResponse(loginModel);
+        LoginModel? storedResponse = await loginRepo.getUserLoginResponse();
+        log('Login success for userId=${storedResponse?.userId}');
+        emit(LoginLoaded(loginModel));
       } else {
-        emit(LoginError("Error"));
+        emit(LoginError(loginModel.loginMessage));
       }
     } catch (e) {
       emit(LoginError("Error$e"));

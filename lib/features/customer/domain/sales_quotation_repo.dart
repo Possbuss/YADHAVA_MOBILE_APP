@@ -1,42 +1,18 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../core/constants/api_constants.dart';
-import '../../../core/util/session.dart';
-import '../../auth/data/login_model.dart';
-import '../../auth/domain/login_repo.dart';
+import '../../../core/util/api_query.dart';
+import '../data/local/sales_quotation_local_data_source.dart';
 import '../data/sales_quotation_model.dart';
 
 class SalesQuotationRepo {
-  final Dio _dio = Dio();
-  final Session _session = Session();
-  final GetLoginRepo _loginRepo = GetLoginRepo();
+  SalesQuotationRepo({
+    ApiQuery? apiQuery,
+    SalesQuotationLocalDataSource? localDataSource,
+  })  : _apiQuery = apiQuery ?? ApiQuery(),
+        _localDataSource =
+            localDataSource ?? SalesQuotationLocalDataSource();
 
-  String _draftKey({
-    required int companyId,
-    required int customerId,
-    required int invoiceId,
-  }) {
-    return 'sales_quotation_draft_${companyId}_${customerId}_$invoiceId';
-  }
-
-  Future<Options> _options() async {
-    final String token = await _session.tokenExpired();
-    final LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
-    return Options(
-      headers: {
-        'Authorization': 'Bearer $token',
-        'routeId': loginModel?.routeId ?? '',
-        'vehicleId': loginModel?.vehicleId ?? '',
-        'companyId': loginModel?.companyId ?? '',
-        'employeeId': loginModel?.employeeId ?? '',
-        'userId': loginModel?.userId ?? '',
-        'Content-Type': 'application/json',
-      },
-    );
-  }
+  final ApiQuery _apiQuery;
+  final SalesQuotationLocalDataSource _localDataSource;
 
   Future<List<SalesQuotationRegisterItem>> getQuotationRegister({
     required String fromDate,
@@ -44,12 +20,11 @@ class SalesQuotationRepo {
     required int partyId,
     required int companyId,
   }) async {
-    final response = await _dio.get(
-      '${ApiConstants.baseUrl}${ApiConstants.quotationRegister}frmDate=$fromDate&endDate=$endDate&partyId=$partyId&companyId=$companyId',
-      options: await _options(),
+    final response = await _apiQuery.getQuery(
+      '${ApiConstants.quotationRegister}frmDate=$fromDate&endDate=$endDate&partyId=$partyId&companyId=$companyId',
     );
 
-    final dynamic data = response.data;
+    final dynamic data = response?.data;
     if (data is! List) {
       return const <SalesQuotationRegisterItem>[];
     }
@@ -64,92 +39,62 @@ class SalesQuotationRepo {
     required int invoiceId,
     required int companyId,
   }) async {
-    final response = await _dio.get(
-      '${ApiConstants.baseUrl}${ApiConstants.quotationGetById}invoiceId=$invoiceId&companyId=$companyId',
-      options: await _options(),
+    final response = await _apiQuery.getQuery(
+      '${ApiConstants.quotationGetById}invoiceId=$invoiceId&companyId=$companyId',
     );
-    return SalesQuotation.fromJson(response.data as Map<String, dynamic>);
+    return SalesQuotation.fromJson(response!.data as Map<String, dynamic>);
   }
 
   Future<void> insert(SalesQuotation quotation) async {
-    final response = await _dio.post(
-      '${ApiConstants.baseUrl}${ApiConstants.quotationInsert}',
-      data: quotation.toJson(),
-      options: await _options(),
+    final response = await _apiQuery.postQuery(
+      ApiConstants.quotationInsert,
+      quotation.toJson(),
     );
-    _throwIfFailed(response.data, fallback: 'Failed to create quotation.');
+    _throwIfFailed(response?.data, fallback: 'Failed to create quotation.');
   }
 
   Future<void> update(SalesQuotation quotation) async {
-    final response = await _dio.post(
-      '${ApiConstants.baseUrl}${ApiConstants.quotationUpdate}',
-      data: quotation.toJson(),
-      options: await _options(),
+    final response = await _apiQuery.postQuery(
+      ApiConstants.quotationUpdate,
+      quotation.toJson(),
     );
-    _throwIfFailed(response.data, fallback: 'Failed to update quotation.');
+    _throwIfFailed(response?.data, fallback: 'Failed to update quotation.');
   }
 
   Future<void> delete({
     required String invoiceNo,
     required int companyId,
   }) async {
-    final response = await _dio.delete(
-      '${ApiConstants.baseUrl}${ApiConstants.quotationDelete}invoiceNo=$invoiceNo&companyId=$companyId',
-      options: await _options(),
+    final response = await _apiQuery.deleteQuery(
+      '${ApiConstants.quotationDelete}invoiceNo=$invoiceNo&companyId=$companyId',
     );
-    _throwIfFailed(response.data, fallback: 'Failed to delete quotation.');
+    _throwIfFailed(response?.data, fallback: 'Failed to delete quotation.');
   }
 
-  Future<void> saveDraft(SalesQuotation quotation) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _draftKey(
-        companyId: quotation.companyId,
-        customerId: quotation.customerAccountId,
-        invoiceId: quotation.invoiceId,
-      ),
-      jsonEncode(quotation.toJson()),
-    );
-  }
+  Future<void> saveDraft(SalesQuotation quotation) =>
+      _localDataSource.saveDraft(quotation);
 
   Future<SalesQuotation?> getDraft({
     required int companyId,
     required int customerId,
     required int invoiceId,
-  }) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? rawDraft = prefs.getString(
-      _draftKey(
+  }) =>
+      _localDataSource.getDraft(
         companyId: companyId,
         customerId: customerId,
         invoiceId: invoiceId,
-      ),
-    );
-    if (rawDraft == null || rawDraft.isEmpty) {
-      return null;
-    }
-
-    try {
-      return SalesQuotation.fromJson(jsonDecode(rawDraft) as Map<String, dynamic>);
-    } catch (_) {
-      return null;
-    }
-  }
+      );
 
   Future<void> clearDraft({
     required int companyId,
     required int customerId,
     required int invoiceId,
-  }) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove(
-      _draftKey(
+  }) =>
+      _localDataSource.clearDraft(
         companyId: companyId,
         customerId: customerId,
         invoiceId: invoiceId,
-      ),
-    );
-  }
+      );
 
   void _throwIfFailed(dynamic data, {required String fallback}) {
     if (data is Map<String, dynamic>) {

@@ -10,7 +10,7 @@ class RefreshInitial extends RefreshState {
 }
 
 class RefreshLoaded extends RefreshState {
-  final dynamic response;
+  final RefreshModel response;
   const RefreshLoaded(this.response);
   @override
   List<Object> get props => [response];

@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:Yadhava/core/util/local_db_helper.dart';
-import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/cash_receipt_repo.dart';
 import '../../../model/cash_receipt_model.dart';
 
@@ -25,12 +25,7 @@ class CashReceiptBloc extends Bloc<CashReceiptEvent, CashReceiptState> {
     try {
       final db = LocalDbHelper();
       bool isLocalEmpty = await db.isEmptyReceipts(event.partyId);
-      print(isLocalEmpty);
       if (!isLocalEmpty && event.cashReceipt['forceRefresh'] == false) {
-        print('data from local db cash receipts');
-        // Load from local DB
-        print('Party');
-
         final localReceipts =
             await db.getCashReceipts(event.partyId);
 

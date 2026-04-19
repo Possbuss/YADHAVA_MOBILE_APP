@@ -2,7 +2,6 @@
 //
 //     final refreshModel = refreshModelFromJson(jsonString);
 
-import 'package:meta/meta.dart';
 import 'dart:convert';
 
 RefreshModel refreshModelFromJson(String str) => RefreshModel.fromJson(json.decode(str));

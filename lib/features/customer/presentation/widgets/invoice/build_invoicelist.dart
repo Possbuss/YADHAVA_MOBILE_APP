@@ -35,7 +35,6 @@ Widget buildInvoiceList({
         final invoice = invoices[index];
         return GestureDetector(
           onTap: () async {
-
             if (invoice.invoiceNo.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -45,7 +44,6 @@ Widget buildInvoiceList({
               );
               return; // prevent navigation
             }
-
 
             final result = await Navigator.push(
               context,
@@ -70,7 +68,7 @@ Widget buildInvoiceList({
             customerName: invoice.clientName,
             branchName: invoice.branchName,
             salesManName: invoice.salesManName,
-            // invoiceType: invoice.invoiceType,
+            invoiceType: invoice.invoiceType,
             invoiceNo: invoice.invoiceNo,
             invoiceDate: invoice.invoiceDate,
             netTotal: invoice.netTotal,

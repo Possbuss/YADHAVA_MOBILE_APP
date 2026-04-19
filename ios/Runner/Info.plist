@@ -15,6 +15,11 @@ sion="1.0">
 	<string>We need photo library access so you can choose a client profile picture.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We may save captured client profile pictures to your photo library.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

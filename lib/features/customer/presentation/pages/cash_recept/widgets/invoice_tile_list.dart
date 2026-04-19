@@ -6,6 +6,7 @@ class InvoiceListTile extends StatelessWidget {
   final String customerName;
   final String branchName;
   final String salesManName;
+  final String invoiceType;
   final String invoiceNo;
   final String invoiceDate;
   final double netTotal;
@@ -16,6 +17,7 @@ class InvoiceListTile extends StatelessWidget {
     required this.customerName,
     required this.branchName,
     required this.salesManName,
+    required this.invoiceType,
     required this.invoiceNo,
     required this.invoiceDate,
     required this.netTotal,
@@ -24,15 +26,26 @@ class InvoiceListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final bool isInvoiceMissing = invoiceNo.trim().isEmpty;
+    final String normalizedInvoiceType = invoiceType
+        .trim()
+        .toUpperCase()
+        .replaceAll(' ', '_')
+        .replaceAll('-', '_');
+    final bool isTaxInvoice = normalizedInvoiceType == 'TAX_INVOICE';
+    final Color borderColor = isInvoiceMissing
+        ? Colour.blackgery
+        : isTaxInvoice
+            ? const Color(0xFF7A52FF).withValues(alpha: 0.65)
+            : Colour.blackgery;
+    final Color taxBadgeColor = const Color(0xFF7A52FF).withValues(alpha: 0.18);
 
     return Card(
       color: isInvoiceMissing ? Colour.lightOrange : Colour.lightblack,
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Colour.blackgery, width: 1),
+        side: BorderSide(color: borderColor, width: isTaxInvoice ? 1.2 : 1),
       ),
       elevation: 0,
       child: Padding(
@@ -59,20 +72,54 @@ class InvoiceListTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    branchName.trim().isNotEmpty ? branchName : customerName,
-                    style: isInvoiceMissing
-                        ? const TextStyle(
-                            color: Colors.red,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          )
-                        : const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          branchName.trim().isNotEmpty
+                              ? branchName
+                              : customerName,
+                          style: isInvoiceMissing
+                              ? const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                )
+                              : const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isTaxInvoice) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                    overflow: TextOverflow.ellipsis,
+                          decoration: BoxDecoration(
+                            color: taxBadgeColor,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: const Color(0xFF7A52FF)
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: const Text(
+                            'TAX',
+                            style: TextStyle(
+                              color: Color(0xFFC9B7FF),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -146,7 +193,8 @@ class InvoiceListTile extends StatelessWidget {
                       child: Icon(
                         Icons.print_outlined,
                         size: 20,
-                        color: onPrint == null ? Colors.white24 : Colors.white70,
+                        color:
+                            onPrint == null ? Colors.white24 : Colors.white70,
                       ),
                     ),
                   ),

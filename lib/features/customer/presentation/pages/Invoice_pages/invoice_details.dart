@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:Yadhava/core/constants/color.dart';
 import 'package:Yadhava/core/util/format_rupees.dart';
@@ -68,6 +69,8 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
       TextEditingController(text: '0');
   final TextEditingController sellingController = TextEditingController();
   final TextEditingController totalController = TextEditingController();
+  final TextEditingController gstPercentageController =
+      TextEditingController(text: '0');
 
   String? selectedItem;
   String? selectedUOM;
@@ -81,11 +84,29 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
   late String fromDate;
 
   late List<MobileAppSalesInvoiceMasterDt> details;
+  late String invoiceType;
+  double grossTotal = 0.0;
+  double totalTaxableAmount = 0.0;
+  double totalSgstAmount = 0.0;
+  double totalCgstAmount = 0.0;
+  double totalIgstAmount = 0.0;
+  double totalCessAmount = 0.0;
+  double roundOf = 0.0;
   double totalNet = 0.0;
   bool credit = true;
   bool _isUpdatingDiscount = false;
   int vehicleId = 0;
   int companyId = 0;
+  bool _loadingDialogShown = false;
+
+  bool get isTaxInvoice => invoiceType == 'TAX_INVOICE';
+
+  double _round4(double value) =>
+      value.isFinite ? double.parse(value.toStringAsFixed(4)) : 0.0;
+
+  double _computeRoundOf(double amount) {
+    return _round4(amount.roundToDouble() - amount);
+  }
 
   @override
   void initState() {
@@ -98,14 +119,12 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
     getAllCompany();
     _getLoginResponse();
 
-
     discountAmount.addListener(() {
       String text = discountAmount.text.trim();
 
       if (text.isEmpty) {
         discountAmount.text = '0';
       }
-
     });
 
     super.initState();
@@ -116,10 +135,11 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
     srtController.text = '0';
     discountAmount.text = widget.invoiceModel.totalDiscountVal.toString();
     details = List.from(widget.invoiceModel.details);
+    invoiceType = widget.invoiceModel.invoiceType;
     selectedOption = widget.invoiceModel.payType.isNotEmpty
         ? convertPaymentType(widget.invoiceModel.payType)
         : "Cash";
-    _calculateTotalNet(details);
+    _recalculateInvoiceTotals();
   }
 
   String _getEndDate() {
@@ -157,16 +177,84 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
   void dispose() {
     discountAmount.dispose();
     paidAmount.dispose();
+    gstPercentageController.dispose();
     super.dispose();
   }
 
-  void _calculateTotalNet(List<MobileAppSalesInvoiceMasterDt> details) {
-    double sum = 0.0;
-    for (var item in details) {
-      sum += item.totalRate;
+  void _recalculateInvoiceTotals() {
+    grossTotal = 0.0;
+    totalTaxableAmount = 0.0;
+    totalSgstAmount = 0.0;
+    totalCgstAmount = 0.0;
+    totalIgstAmount = 0.0;
+    totalCessAmount = 0.0;
+    roundOf = 0.0;
+
+    for (final item in details) {
+      grossTotal += item.totalRate;
     }
+    grossTotal = _round4(grossTotal);
+
+    final double discount =
+        _round4(double.tryParse(discountAmount.text) ?? 0.0);
+    final double discountedSubtotal =
+        _round4(math.max(0.0, grossTotal - discount));
+
+    final List<MobileAppSalesInvoiceMasterDt> recalculated = [];
+    for (final item in details) {
+      final double taxableAmount = grossTotal == 0
+          ? 0.0
+          : (item.totalRate / grossTotal) * discountedSubtotal;
+      final double gstPercentage = _round4(item.gstPercentage);
+      final double sgstPercentage =
+          isTaxInvoice ? _round4(gstPercentage / 2) : 0.0;
+      final double cgstPercentage =
+          isTaxInvoice ? _round4(gstPercentage / 2) : 0.0;
+      final double igstPercentage = 0.0;
+      final double roundedTaxableAmount = _round4(taxableAmount);
+      final double sgstAmount =
+          _round4(roundedTaxableAmount * sgstPercentage / 100);
+      final double cgstAmount =
+          _round4(roundedTaxableAmount * cgstPercentage / 100);
+      final double igstAmount = 0.0;
+      final double netAmount =
+          _round4(roundedTaxableAmount + sgstAmount + cgstAmount);
+
+      recalculated.add(
+        item.copyWith(
+          gstPercentage: gstPercentage,
+          sgstPercentage: sgstPercentage,
+          cgstPercentage: cgstPercentage,
+          igstPercentage: igstPercentage,
+          taxableAmount: roundedTaxableAmount,
+          sgstAmount: sgstAmount,
+          cgstAmount: cgstAmount,
+          igstAmount: igstAmount,
+          netAmount: isTaxInvoice ? netAmount : roundedTaxableAmount,
+          netRate: isTaxInvoice ? netAmount : roundedTaxableAmount,
+        ),
+      );
+
+      totalTaxableAmount += roundedTaxableAmount;
+      totalSgstAmount += sgstAmount;
+      totalCgstAmount += cgstAmount;
+      totalIgstAmount += igstAmount;
+    }
+    totalTaxableAmount = _round4(totalTaxableAmount);
+    totalSgstAmount = _round4(totalSgstAmount);
+    totalCgstAmount = _round4(totalCgstAmount);
+    totalIgstAmount = _round4(totalIgstAmount);
+    totalCessAmount = _round4(totalCessAmount);
+
     setState(() {
-      totalNet = sum - double.parse(discountAmount.text);
+      details = recalculated;
+      final double subtotal = _round4(totalTaxableAmount +
+          totalSgstAmount +
+          totalCgstAmount +
+          totalIgstAmount +
+          totalCessAmount);
+      roundOf = _computeRoundOf(subtotal);
+      totalNet = _round4(subtotal + roundOf);
     });
   }
 
@@ -198,14 +286,14 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
     setState(() {
       details[index] = updatedItem;
     });
-    _calculateTotalNet(details);
+    _recalculateInvoiceTotals();
   }
 
   void deleteItem(MobileAppSalesInvoiceMasterDt item) {
     setState(() {
       details.remove(item);
     });
-    _calculateTotalNet(details);
+    _recalculateInvoiceTotals();
   }
 
   void saveOrder(BuildContext context) {
@@ -238,6 +326,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
             BlocListener<UpdateInvoiceBloc, UpdateInvoiceState>(
               listener: (context, state) {
                 if (state is UpdateInvoiceLoading) {
+                  _loadingDialogShown = true;
                   showDialog(
                     barrierDismissible: false,
                     context: context,
@@ -246,7 +335,10 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                     ),
                   );
                 } else if (state is UpdateInvoiceSuccess) {
-                  Navigator.of(context).pop(); // Close the loading dialog
+                  if (_loadingDialogShown) {
+                    Navigator.of(context).pop();
+                    _loadingDialogShown = false;
+                  }
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text("Invoice updated successfully!")),
@@ -254,17 +346,22 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
 
                   Future.delayed(const Duration(seconds: 1), () {
                     Navigator.pop(context);
-                    Navigator.pop(context,true);
+                    Navigator.pop(context, true);
                   });
 
                   setState(() {
                     discountAmount.text =
-                        widget.invoiceModel.totalDiscountVal.toString() ?? '0.0';
+                        widget.invoiceModel.totalDiscountVal.toString() ??
+                            '0.0';
                     details = List.from(widget.invoiceModel.details);
-                    _calculateTotalNet(details);
+                    invoiceType = widget.invoiceModel.invoiceType;
+                    _recalculateInvoiceTotals();
                   });
                 } else if (state is UpdateInvoiceFailure) {
-                  Navigator.of(context).pop();
+                  if (_loadingDialogShown) {
+                    Navigator.of(context).pop();
+                    _loadingDialogShown = false;
+                  }
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -279,20 +376,25 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                   // Logic to update the invoice
                   if (totalNet != 0 &&
                       totalNet - double.parse(discountAmount.text) != 0) {
-
-                    var updatedInvoice =
-                        widget.invoiceModel;
+                    var updatedInvoice = widget.invoiceModel;
                     updatedInvoice = updatedInvoice.copyWith(
-                      details: details,
+                        details: details,
                         paidAmount: paidAmount.text.isEmpty
                             ? 0
-                            : double.parse(paidAmount.text),
+                            : _round4(double.parse(paidAmount.text)),
+                        invoiceType: invoiceType,
                         discountAmount: discountAmount.text == ''
                             ? 0.0
-                            : double.parse(discountAmount.text),
+                            : _round4(double.parse(discountAmount.text)),
                         payType: reConvertPaymentType(selectedOption),
-                        total: totalNet + double.parse(discountAmount.text),
-                        netTotal: totalNet);
+                        total: _round4(grossTotal),
+                        totalTaxableAmount: _round4(totalTaxableAmount),
+                        totalSgstAmount: _round4(totalSgstAmount),
+                        totalCgstAmount: _round4(totalCgstAmount),
+                        totalIgstAmount: _round4(totalIgstAmount),
+                        totalCessAmount: _round4(totalCessAmount),
+                        roundOf: _round4(roundOf),
+                        netTotal: _round4(totalNet));
 
                     context.read<UpdateInvoiceBloc>().add(
                           SubmitUpdateInvoice(updatedInvoice: updatedInvoice),
@@ -611,6 +713,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
     srtController.text = '0';
     sellingController.clear();
     totalController.clear();
+    gstPercentageController.text = '0';
     // setState(() {
     //   selectedItem = null;
     //   selectedItemData = {};
@@ -636,8 +739,8 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
 
                     // Filter out items already in the `details` list
                     final availableItems = state.items
-                        .where((item) =>
-                            !addedProductIds.contains(item.productId))
+                        .where(
+                            (item) => !addedProductIds.contains(item.productId))
                         .toList();
 
                     // Map filtered items to product names
@@ -657,12 +760,10 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                             //orElse: () => {},
                           );
                           sellingController.text =
-                              selectedItemData.sellingPrice.toString() ??
-                                  '0';
+                              selectedItemData.sellingPrice.toString() ?? '0';
                           totalController.text = sellingController.text;
                           uomInitialValue =
-                              selectedItemData.packingName.toString() ??
-                                  'N/A';
+                              selectedItemData.packingName.toString() ?? 'N/A';
                           uomItems = [uomInitialValue!];
                         });
                       },
@@ -746,6 +847,14 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                     value!.isEmpty ? 'Please enter Unit Price' : null,
                 hintText: '',
               ),
+              const SizedBox(height: 16),
+              ReusableVoucherTextField(
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                label: "GST %",
+                controller: gstPercentageController,
+                hintText: '',
+              ),
               ReusableVoucherTextField(
                 readOnly: true,
                 onChanged: (srt) {
@@ -781,6 +890,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
             srtController.text = '0';
             sellingController.clear();
             totalController.clear();
+            gstPercentageController.text = '0';
             setState(() {
               selectedItem = null;
               selectedItemData;
@@ -797,39 +907,49 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
 
             if (_formKeyAlert.currentState!.validate()) {
               MobileAppSalesInvoiceMasterDt newItem =
-              MobileAppSalesInvoiceMasterDt(
-                productName: selectedItem ?? '',
-                quantity: double.tryParse(qtyController.text) ?? 0,
-                foc: double.tryParse(focController.text) ?? 0.0,
-                srtQty: double.tryParse(srtController.text) ?? 0.0,
-                totalRate: double.tryParse(totalController.text) ?? 0.0,
-                siNo: index,
-                companyId: 1,
-                clientId: 0,
-                productId: selectedItemData.productId,
-                partNumber: selectedItemData.partNumber,
-                //packingDescription: selectedItemData.packingDescription,
-                packingId: selectedItemData.packingId,
-                packingName: selectedItemData.packingName,
-                totalQty: double.tryParse(totalController.text) ?? 0.0,
-                unitRate: double.tryParse(sellingController.text) ?? 0.0,
-
-                salesManName: "",
-                packQty: 1,
-                netRate: double.tryParse(totalController.text) ?? 0.0,
-                invoiceNo: "",
-                invoiceId: 0,
-                invoiceDate: "",
-                clientName: "",
-                branchName: "",
-                branchId: widget.vehicleId,
-                salesManId:0,
-                packingOrder: 1,
-                packMultiplyQty: 1,
-                routeId: 0,
-                mobile: ""
-
-              );
+                  MobileAppSalesInvoiceMasterDt(
+                      productName: selectedItem ?? '',
+                      quantity: double.tryParse(qtyController.text) ?? 0,
+                      foc: double.tryParse(focController.text) ?? 0.0,
+                      srtQty: double.tryParse(srtController.text) ?? 0.0,
+                      totalRate: double.tryParse(totalController.text) ?? 0.0,
+                      siNo: index,
+                      companyId: 1,
+                      clientId: 0,
+                      productId: selectedItemData.productId,
+                      partNumber: selectedItemData.partNumber,
+                      //packingDescription: selectedItemData.packingDescription,
+                      packingId: selectedItemData.packingId,
+                      packingName: selectedItemData.packingName,
+                      totalQty: double.tryParse(totalController.text) ?? 0.0,
+                      unitRate: double.tryParse(sellingController.text) ?? 0.0,
+                      gstPercentage:
+                          double.tryParse(gstPercentageController.text) ?? 0.0,
+                      sgstPercentage: 0.0,
+                      cgstPercentage: 0.0,
+                      igstPercentage: 0.0,
+                      cessPercentage: 0.0,
+                      taxableAmount:
+                          double.tryParse(totalController.text) ?? 0.0,
+                      sgstAmount: 0.0,
+                      cgstAmount: 0.0,
+                      igstAmount: 0.0,
+                      cessAmount: 0.0,
+                      netAmount: double.tryParse(totalController.text) ?? 0.0,
+                      salesManName: "",
+                      packQty: 1,
+                      netRate: double.tryParse(totalController.text) ?? 0.0,
+                      invoiceNo: "",
+                      invoiceId: 0,
+                      invoiceDate: "",
+                      clientName: "",
+                      branchName: "",
+                      branchId: widget.vehicleId,
+                      salesManId: 0,
+                      packingOrder: 1,
+                      packMultiplyQty: 1,
+                      routeId: 0,
+                      mobile: "");
 
               // Check if the item is already present in the list
               bool isDuplicate =
@@ -843,9 +963,10 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                   srtController.text = '0';
                   totalController.clear();
                   sellingController.clear();
-
-                  _calculateTotalNet(details);
+                  gstPercentageController.text = '0';
                 });
+
+                _recalculateInvoiceTotals();
 
                 print("Item added. Total items: ${details.length}");
                 Navigator.pop(context);
@@ -980,7 +1101,6 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                           style: const TextStyle(color: Colors.white)),
                     ],
                   ),
-
                   Row(
                     spacing: 7,
                     children: [
@@ -994,9 +1114,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                         label: "discount",
                         onChanged: (value) {
                           if (value.trim().isNotEmpty) {
-                            // widget.invoiceModel
-                            //     .copyWith(discountAmount: double.parse(value));
-                            _calculateTotalNet(details);
+                            _recalculateInvoiceTotals();
                           }
                         },
                       ),
@@ -1018,7 +1136,48 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                       ),
                     ],
                   ),
-
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text(
+                        "Invoice type:",
+                        style: TextStyle(color: Colour.pWhite),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SegmentedButton<String>(
+                          style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith((states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return Colour.plightpurple;
+                              }
+                              return Colour.blackgery;
+                            }),
+                            foregroundColor:
+                                WidgetStateProperty.all(Colour.pWhite),
+                          ),
+                          segments: const [
+                            ButtonSegment<String>(
+                              value: 'SALES_INVOICE',
+                              label: Text('Sales'),
+                            ),
+                            ButtonSegment<String>(
+                              value: 'TAX_INVOICE',
+                              label: Text('Tax'),
+                            ),
+                          ],
+                          selected: <String>{invoiceType},
+                          onSelectionChanged: (selection) {
+                            setState(() {
+                              invoiceType = selection.first;
+                            });
+                            _recalculateInvoiceTotals();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                   Row(
                     spacing: 6,
                     children: [
@@ -1029,6 +1188,52 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                       _buildRadioButton("Cash"),
                       _buildRadioButton("Bank"),
                       _buildRadioButton("Credit"),
+                    ],
+                  ),
+                  Row(
+                    spacing: 6,
+                    children: [
+                      if (isTaxInvoice)
+                        Expanded(
+                          child: Text(
+                            "SGST: ${formatRupees(totalSgstAmount)}",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      if (isTaxInvoice)
+                        Expanded(
+                          child: Text(
+                            "CGST: ${formatRupees(totalCgstAmount)}",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (isTaxInvoice)
+                    Row(
+                      spacing: 6,
+                      children: [
+                        Text(
+                          "Taxable:",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        Text(
+                          formatRupees(totalTaxableAmount),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  Row(
+                    spacing: 6,
+                    children: [
+                      Text(
+                        "Round Off:",
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Text(
+                        formatRupees(roundOf),
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ],
                   ),
                   Row(
@@ -1058,6 +1263,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
                   final detail = details[index];
                   return ItemTile(
                     detail: detail,
+                    isTaxInvoice: isTaxInvoice,
                     onEdit: (updatedDetail) => editItem(index, updatedDetail),
                     onDelete: () {
                       deleteItem(detail);
@@ -1089,15 +1295,25 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
 
 class ItemTile extends StatelessWidget {
   final MobileAppSalesInvoiceMasterDt detail;
+  final bool isTaxInvoice;
   final Function(MobileAppSalesInvoiceMasterDt) onEdit;
   final VoidCallback onDelete;
 
   const ItemTile({
     super.key,
     required this.detail,
+    required this.isTaxInvoice,
     required this.onEdit,
     required this.onDelete,
   });
+
+  double _displayTaxPercentage(MobileAppSalesInvoiceMasterDt item) {
+    final double combinedLocalTax = item.sgstPercentage + item.cgstPercentage;
+    if (combinedLocalTax > 0) {
+      return combinedLocalTax;
+    }
+    return item.gstPercentage;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1145,6 +1361,24 @@ class ItemTile extends StatelessWidget {
                       "Total", formatRupees(detail.totalRate))),
             ],
           ),
+          if (isTaxInvoice) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildDetailColumn(
+                    "GST %", _displayTaxPercentage(detail).toStringAsFixed(2)),
+                const SizedBox(width: 10),
+                _buildDetailColumn("SGST", formatRupees(detail.sgstAmount)),
+                const SizedBox(width: 10),
+                _buildDetailColumn("CGST", formatRupees(detail.cgstAmount)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child:
+                      _buildDetailColumn("Net", formatRupees(detail.netAmount)),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -1155,7 +1389,8 @@ class ItemTile extends StatelessWidget {
                   final updatedItem =
                       await showDialog<MobileAppSalesInvoiceMasterDt>(
                     context: context,
-                    builder: (context) => _EditItemDialog(item: detail),
+                    builder: (context) => _EditItemDialog(
+                        item: detail, isTaxInvoice: isTaxInvoice),
                   );
                   if (updatedItem != null) onEdit(updatedItem);
                 },
@@ -1193,8 +1428,10 @@ class ItemTile extends StatelessWidget {
 
 class _EditItemDialog extends StatefulWidget {
   final MobileAppSalesInvoiceMasterDt item;
+  final bool isTaxInvoice;
 
-  const _EditItemDialog({super.key, required this.item});
+  const _EditItemDialog(
+      {super.key, required this.item, required this.isTaxInvoice});
 
   @override
   __EditItemDialogState createState() => __EditItemDialogState();
@@ -1206,6 +1443,19 @@ class __EditItemDialogState extends State<_EditItemDialog> {
   late TextEditingController focController;
   late TextEditingController srtController;
   late TextEditingController packingNameController;
+  late TextEditingController gstPercentageController;
+
+  double _round4(double value) =>
+      value.isFinite ? double.parse(value.toStringAsFixed(4)) : 0.0;
+
+  double _displayTaxPercentage() {
+    final double combinedLocalTax =
+        _round4(widget.item.sgstPercentage + widget.item.cgstPercentage);
+    if (combinedLocalTax > 0) {
+      return combinedLocalTax;
+    }
+    return _round4(widget.item.gstPercentage);
+  }
 
   @override
   void initState() {
@@ -1218,6 +1468,19 @@ class __EditItemDialogState extends State<_EditItemDialog> {
     srtController = TextEditingController(text: widget.item.srtQty.toString());
     packingNameController =
         TextEditingController(text: widget.item.packingName);
+    gstPercentageController =
+        TextEditingController(text: _displayTaxPercentage().toString());
+  }
+
+  @override
+  void dispose() {
+    quantityController.dispose();
+    unitRateController.dispose();
+    focController.dispose();
+    srtController.dispose();
+    packingNameController.dispose();
+    gstPercentageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -1281,6 +1544,12 @@ class __EditItemDialogState extends State<_EditItemDialog> {
               decoration: const InputDecoration(labelText: "Unit Rate"),
               keyboardType: TextInputType.number,
             ),
+            TextField(
+              controller: gstPercentageController,
+              decoration: const InputDecoration(labelText: "GST %"),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+            ),
           ],
         ),
       ),
@@ -1292,18 +1561,40 @@ class __EditItemDialogState extends State<_EditItemDialog> {
         ),
         TextButton(
           onPressed: () {
+            final double baseTotal = (double.parse(quantityController.text) *
+                    double.parse(unitRateController.text)) -
+                (double.parse(srtController.text) *
+                    double.parse(unitRateController.text));
+            final double gstPercentage =
+                double.tryParse(gstPercentageController.text) ?? 0.0;
+            final double sgstPercentage =
+                widget.isTaxInvoice ? gstPercentage / 2 : 0.0;
+            final double cgstPercentage =
+                widget.isTaxInvoice ? gstPercentage / 2 : 0.0;
+            final double sgstAmount = baseTotal * sgstPercentage / 100;
+            final double cgstAmount = baseTotal * cgstPercentage / 100;
+            final double netAmount = widget.isTaxInvoice
+                ? baseTotal + sgstAmount + cgstAmount
+                : baseTotal;
             final updatedItem = widget.item.copyWith(
                 quantity: double.parse(quantityController.text),
                 foc: double.parse(focController.text),
                 packingName: packingNameController.text,
                 unitRate: double.parse(unitRateController.text),
-                totalRate: (double.parse(quantityController.text) *
-                        double.parse(unitRateController.text)) -
-                    (double.parse(srtController.text) *
-                        double.parse(unitRateController.text)),
-                srtQty: double.parse(srtController.text)
-
-            );
+                totalRate: baseTotal,
+                srtQty: double.parse(srtController.text),
+                gstPercentage: gstPercentage,
+                sgstPercentage: sgstPercentage,
+                cgstPercentage: cgstPercentage,
+                igstPercentage: 0.0,
+                cessPercentage: 0.0,
+                taxableAmount: baseTotal,
+                sgstAmount: sgstAmount,
+                cgstAmount: cgstAmount,
+                igstAmount: 0.0,
+                cessAmount: 0.0,
+                netAmount: netAmount,
+                netRate: netAmount);
             Navigator.pop(context, updatedItem);
           },
           child:

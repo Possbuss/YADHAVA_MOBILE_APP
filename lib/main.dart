@@ -56,111 +56,153 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(create: (context) => VoucherBloc(CashReceiptRepo())),
-        BlocProvider(
-            create: (BuildContext context) =>
-                CashReceiptBloc(CashReceiptRepo())),
-        BlocProvider(
-            create: (context) =>
-                UpdateInvoiceBloc(invoiceRepository: InvoiceRepository())),
-        BlocProvider(
-            create: (context) => SalesSummeryBloc(SalesSummaryRepository())),
-        BlocProvider(create: (context) => HomeBloc(HomeRepository())),
-        BlocProvider(
-            create: (context) =>
-                CashSummeryBloc(CashCreditSummaryRepository())),
-        BlocProvider(
-            create: (context) =>
-                CreditummeryBloc(CashCreditSummaryRepository())),
-        BlocProvider(
-            create: (context) =>
-                CashCreditSummeryBloc(CashCreditSummaryRepository())),
-        BlocProvider<SplashBloc>(
-          lazy: true,
-          create: (BuildContext context) => SplashBloc(GetCompanyListRepo()),
-        ),
-        BlocProvider<LastInvoiceBloc>(
-          lazy: true,
-          create: (BuildContext context) =>
-              LastInvoiceBloc(LastInvoiceRepository()),
-        ),
-        BlocProvider<LoginBloc>(
-          create: (BuildContext context) => LoginBloc(GetLoginRepo()),
-        ),
-        BlocProvider<VoucherUpdateBloc>(
-          create: (BuildContext context) =>
-              VoucherUpdateBloc(CashReceiptRepo()),
-        ),
-        BlocProvider<VehicleBloc>(
-          lazy: true,
-          create: (BuildContext context) => VehicleBloc(VehicleRepository()),
-        ),
-        BlocProvider<RouteBloc>(
-          create: (BuildContext context) => RouteBloc(GetRouteRepo()),
-        ),
-        BlocProvider<ClientListBloc>(
-          create: (BuildContext context) => ClientListBloc(GetClientListRepo()),
-        ),
-        BlocProvider<ClientCreateBloc>(
-          create: (BuildContext context) =>
-              ClientCreateBloc(CreateClientListRepo()),
-        ),
-        BlocProvider<ClientUpdateBloc>(
-          create: (BuildContext context) =>
-              ClientUpdateBloc(UpdateClientListRepo()),
-        ),
-        BlocProvider<InvoiceBloc>(
-            create: (BuildContext context) => InvoiceBloc(InvoiceRepo())),
-        BlocProvider<RouteDetailsBloc>(
-            create: (BuildContext context) => RouteDetailsBloc(
-                  RouteRepo(),
-                )),
-        BlocProvider<StockListBloc>(
-          lazy: true,
-          create: (BuildContext context) => StockListBloc(ProductStockRepo()),
-        ),
-        BlocProvider<AddItemBloc>(
-          create: (BuildContext context) => AddItemBloc(OrderRepo()),
-        ),
-        BlocProvider<TotalSalesBloc>(
-          create: (BuildContext context) => TotalSalesBloc(Totalsalesrepo()),
-        ),
+        RepositoryProvider(create: (_) => CashReceiptRepo()),
+        RepositoryProvider(create: (_) => InvoiceRepository()),
+        RepositoryProvider(create: (_) => SalesSummaryRepository()),
+        RepositoryProvider(create: (_) => HomeRepository()),
+        RepositoryProvider(create: (_) => CashCreditSummaryRepository()),
+        RepositoryProvider(create: (_) => GetCompanyListRepo()),
+        RepositoryProvider(create: (_) => LastInvoiceRepository()),
+        RepositoryProvider(create: (_) => GetLoginRepo()),
+        RepositoryProvider(create: (_) => VehicleRepository()),
+        RepositoryProvider(create: (_) => GetRouteRepo()),
+        RepositoryProvider(create: (_) => GetClientListRepo()),
+        RepositoryProvider(create: (_) => CreateClientListRepo()),
+        RepositoryProvider(create: (_) => UpdateClientListRepo()),
+        RepositoryProvider(create: (_) => InvoiceRepo()),
+        RepositoryProvider(create: (_) => RouteRepo()),
+        RepositoryProvider(create: (_) => ProductStockRepo()),
+        RepositoryProvider(create: (_) => OrderRepo()),
+        RepositoryProvider(create: (_) => Totalsalesrepo()),
       ],
-      child: ScreenUtilInit(
-        designSize: const Size(360, 690),
-        builder: (context, child) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Yadhava',
-            theme: ThemeData(
-              scaffoldBackgroundColor: Colour.pBackgroundBlack,
-              appBarTheme: const AppBarTheme(
-                color: Colour.pBackgroundBlack,
-                foregroundColor: Colour.pWhite,
-                centerTitle: false,
-                iconTheme: IconThemeData(color: Colour.pGray, weight: 2.0),
-              ),
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-              useMaterial3: true,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => VoucherBloc(context.read<CashReceiptRepo>()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                CashReceiptBloc(context.read<CashReceiptRepo>()),
+          ),
+          BlocProvider(
+            create: (context) => UpdateInvoiceBloc(
+              invoiceRepository: context.read<InvoiceRepository>(),
             ),
-            builder: (context, child) {
-              return MediaQuery(
-                data: MediaQuery.of(context)
-                    .copyWith(textScaler: const TextScaler.linear(1.0)),
-                child: child!,
-              );
-            },
-            initialRoute: '/splash',
-            routes: {
-              '/splash': (context) => const SplashScreen(),
-              '/home': (context) => const HomeScreen(),
-              // '/invoice': (context) => const InvoicePage(),
-              '/routePage': (context) => const RoutePage(),
-            },
-          );
-        },
+          ),
+          BlocProvider(
+            create: (context) =>
+                SalesSummeryBloc(context.read<SalesSummaryRepository>()),
+          ),
+          BlocProvider(
+            create: (context) => HomeBloc(context.read<HomeRepository>()),
+          ),
+          BlocProvider(
+            create: (context) => CashSummeryBloc(
+              context.read<CashCreditSummaryRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => CreditummeryBloc(
+              context.read<CashCreditSummaryRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => CashCreditSummeryBloc(
+              context.read<CashCreditSummaryRepository>(),
+            ),
+          ),
+          BlocProvider<SplashBloc>(
+            lazy: true,
+            create: (context) =>
+                SplashBloc(context.read<GetCompanyListRepo>()),
+          ),
+          BlocProvider<LastInvoiceBloc>(
+            lazy: true,
+            create: (context) =>
+                LastInvoiceBloc(context.read<LastInvoiceRepository>()),
+          ),
+          BlocProvider<LoginBloc>(
+            create: (context) => LoginBloc(context.read<GetLoginRepo>()),
+          ),
+          BlocProvider<VoucherUpdateBloc>(
+            create: (context) =>
+                VoucherUpdateBloc(context.read<CashReceiptRepo>()),
+          ),
+          BlocProvider<VehicleBloc>(
+            lazy: true,
+            create: (context) =>
+                VehicleBloc(context.read<VehicleRepository>()),
+          ),
+          BlocProvider<RouteBloc>(
+            create: (context) => RouteBloc(context.read<GetRouteRepo>()),
+          ),
+          BlocProvider<ClientListBloc>(
+            create: (context) =>
+                ClientListBloc(context.read<GetClientListRepo>()),
+          ),
+          BlocProvider<ClientCreateBloc>(
+            create: (context) =>
+                ClientCreateBloc(context.read<CreateClientListRepo>()),
+          ),
+          BlocProvider<ClientUpdateBloc>(
+            create: (context) =>
+                ClientUpdateBloc(context.read<UpdateClientListRepo>()),
+          ),
+          BlocProvider<InvoiceBloc>(
+            create: (context) => InvoiceBloc(context.read<InvoiceRepo>()),
+          ),
+          BlocProvider<RouteDetailsBloc>(
+            create: (context) =>
+                RouteDetailsBloc(context.read<RouteRepo>()),
+          ),
+          BlocProvider<StockListBloc>(
+            lazy: true,
+            create: (context) =>
+                StockListBloc(context.read<ProductStockRepo>()),
+          ),
+          BlocProvider<AddItemBloc>(
+            create: (context) => AddItemBloc(context.read<OrderRepo>()),
+          ),
+          BlocProvider<TotalSalesBloc>(
+            create: (context) =>
+                TotalSalesBloc(context.read<Totalsalesrepo>()),
+          ),
+        ],
+        child: ScreenUtilInit(
+          designSize: const Size(360, 690),
+          builder: (context, child) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Yadhava',
+              theme: ThemeData(
+                scaffoldBackgroundColor: Colour.pBackgroundBlack,
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Colour.pBackgroundBlack,
+                  foregroundColor: Colour.pWhite,
+                  centerTitle: false,
+                  iconTheme: IconThemeData(color: Colour.pGray, weight: 2.0),
+                ),
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                useMaterial3: true,
+              ),
+              builder: (context, child) {
+                return MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: const TextScaler.linear(1.0)),
+                  child: child!,
+                );
+              },
+              initialRoute: '/splash',
+              routes: {
+                '/splash': (context) => const SplashScreen(),
+                '/home': (context) => const HomeScreen(),
+                '/routePage': (context) => const RoutePage(),
+              },
+            );
+          },
+        ),
       ),
     );
   }

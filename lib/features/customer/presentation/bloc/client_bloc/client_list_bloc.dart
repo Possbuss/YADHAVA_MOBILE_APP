@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:Yadhava/core/util/local_db_helper.dart';
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../auth/data/login_model.dart';
 import '../../../../auth/domain/login_repo.dart';
@@ -17,11 +16,8 @@ part 'client_list_state.dart';
 
 class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   final GetClientListRepo clientListRepo;
+  final GetLoginRepo _loginRepo = GetLoginRepo();
   List<ClientModel> _allClients = []; // Store the full client list
-  List<ClientActiveInActiveModel> _allClientsActive =
-      []; // Store the full client list
-  List<ClientActiveInActiveModel> _allClientsInActive =
-      []; // Store the full client list
 
   ClientListBloc(this.clientListRepo) : super(ClientListInitial()) {
     on<ClientListGetEvent>(_onGetClientListEvent);
@@ -40,14 +36,12 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
     emit(ClientListActiveLoading());
     try {
       final db = LocalDbHelper();
-      GetLoginRepo loginRepo = GetLoginRepo();
-      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+      LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
 
       if (!event.forceRefresh) {
         final isLocalEmpty = await db.isEmptyActiveClients(loginModel?.routeId);
         if (!isLocalEmpty) {
           final localClients = await db.getActiveClients(loginModel?.routeId);
-          _allClientsActive = localClients;
           emit(ClientListActiveLoaded(
               clientList: localClients, locations: const {}));
           return;
@@ -65,7 +59,6 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         await db.clearActiveClient();
         await db.insertActiveClients(clients);
 
-        _allClientsActive = clients;
         emit(ClientListActiveLoaded(clientList: clients, locations: const {}));
       } else {
         emit(ClientListError(
@@ -84,15 +77,13 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
     emit(ClientListInActiveLoading());
     try {
       final db = LocalDbHelper();
-      GetLoginRepo loginRepo = GetLoginRepo();
-      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+      LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
 
       if (!event.forceRefresh) {
         final isLocalEmpty =
             await db.isEmptyInActiveClients(loginModel?.routeId);
         if (!isLocalEmpty) {
           final localClients = await db.getInActiveClients(loginModel?.routeId);
-          _allClientsInActive = localClients;
           emit(ClientListInActiveLoaded(
               clientList: localClients, locations: const {}));
           return;
@@ -110,7 +101,6 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         await db.clearInActiveClient();
         await db.insertInActiveClients(clients);
 
-        _allClientsInActive = clients;
         emit(
             ClientListInActiveLoaded(clientList: clients, locations: const {}));
       } else {
@@ -130,8 +120,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
     emit(ClientListLoading());
     try {
       final db = LocalDbHelper();
-      GetLoginRepo loginRepo = GetLoginRepo();
-      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+      LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
 
       final response = await clientListRepo.getClientListAllRepo(
           loginModel?.companyId, loginModel?.routeId ?? 0, 0);
@@ -162,13 +151,11 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   ) async {
     emit(ClientListLoading());
     try {
-      GetLoginRepo loginRepo = GetLoginRepo();
-      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+      LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
 
       final db = LocalDbHelper();
       bool isLocalEmpty =
           await db.isEmptyClients(loginModel?.routeId, loginModel?.companyId);
-      print(isLocalEmpty);
 
       if (!event.forceRefresh && !isLocalEmpty) {
         final localClients =
@@ -207,7 +194,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
   ) async {
     emit(ClientListSearchLoading()); // Emit a loading state for search
     try {
-      final query = event.query.trim().toLowerCase() ?? '';
+      final query = event.query.trim().toLowerCase();
       final filteredClients = _allClients.where((client) {
         return (client.name?.toLowerCase() ?? '').contains(query) ||
             (client.contactPersonName?.toLowerCase() ?? '').contains(query) ||
@@ -233,12 +220,8 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
       FetchClientLocationEvent event, Emitter<ClientListState> emit) async {
     try {
       if (event.latitude == 0.0 || event.longitude == 0.0) {
-        print(
-            "⚠️ Skipping location fetch: Invalid coordinates for Index ${event.clientId}");
         return;
       }
-
-      print("Fetching location for Index: ${event.clientId}...");
 
       List<Placemark> placemarks = await placemarkFromCoordinates(
         event.latitude,
@@ -249,7 +232,6 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
         Placemark place = placemarks.first;
         final address =
             '${place.subLocality}, ${place.locality}, ${place.postalCode}';
-        print("✅ Fetched Address for Index ${event.clientId}: $address");
 
         if (state is ClientListLoaded) {
           final loadedState = state as ClientListLoaded;
@@ -263,12 +245,8 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
             locations: updatedLocations,
           ));
         }
-      } else {
-        print("⚠️ No address found for Index ${event.clientId}");
       }
-    } catch (e) {
-      print("❌ Error fetching address for Index ${event.clientId}: $e");
-    }
+    } catch (_) {}
   }
 }
 

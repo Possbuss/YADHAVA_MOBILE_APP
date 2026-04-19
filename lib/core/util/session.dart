@@ -1,10 +1,7 @@
 import 'package:Yadhava/features/auth/data/login_model.dart';
-import 'package:Yadhava/features/auth/data/refresh_model.dart';
-import 'package:Yadhava/features/auth/domain/login_repo.dart';
-import 'package:Yadhava/features/auth/domain/refresh_repo.dart';
-import 'package:dio/dio.dart';
-import 'package:jwt_decode_full/jwt_decode_full.dart';
 
+import '../network/api_client.dart';
+import '../data/auth_storage.dart';
 import '../../features/splash/domain/repository.dart';
 
 // class Session {
@@ -186,90 +183,27 @@ import '../../features/splash/domain/repository.dart';
 // }
 
 class Session {
-  String accessToken = '';
-  String refreshToken = '';
-  String refreshAccessToken = '';
-  String refreshRefreshToken = '';
+  static final Session _instance = Session._internal();
 
-  bool firstTokenExpired = false;
-  bool secondTokenExpired = false;
+  factory Session() => _instance;
 
-  final GetLoginRepo userRepo = GetLoginRepo();
-  final RefreshRepo refreshRepo = RefreshRepo();
+  Session._internal();
+
+  final AuthStorage _authStorage = AuthStorage();
+  final ApiClient _apiClient = ApiClient();
   final GetCompanyListRepo companyListRepo = GetCompanyListRepo();
 
   Future<String> tokenExpired() async {
-    try {
-
-      LoginModel? responseModel = await userRepo.getUserLoginResponse();
-      RefreshModel? refreshModel = await refreshRepo.getTokenResponse();
-
-      if (responseModel == null) {
-        throw Exception("No stored user login response found.");
-      }
-
-      accessToken = responseModel.tokken;
-      refreshToken = responseModel.refreshToken;
-      firstTokenExpired = jwtDecode(accessToken).isExpired ?? false;
-
-      if (!firstTokenExpired) {
-        return accessToken;
-      }
-
-      if (refreshModel != null) {
-        refreshRefreshToken = refreshModel.refreshToken;
-        refreshAccessToken = refreshModel.accessToken;
-        secondTokenExpired = jwtDecode(refreshAccessToken).isExpired ?? false;
-      }
-
-      print("First token expired: $firstTokenExpired");
-      print("First token expired: $refreshRefreshToken");
-      print("First token expired: $accessToken");
-      print("First token expired: $refreshToken");
-      print("Second token expired: $secondTokenExpired");
-
-      if (refreshAccessToken.isEmpty) {
-        if (firstTokenExpired) {
-          return await _refreshToken(responseModel.userId,
-              responseModel.userType, responseModel.companyId, refreshToken);
-        } else {
-          return accessToken;
-        }
-      } else {
-        if (secondTokenExpired) {
-          return await _refreshToken(
-              responseModel.userId,
-              responseModel.userType,
-              responseModel.companyId,
-              refreshRefreshToken);
-        } else {
-          return refreshAccessToken;
-        }
-      }
-    } catch (ex) {
-      print("Error in tokenExpired: $ex");
-      throw Exception("Token handling failed: $ex");
+    final LoginModel? responseModel = await _authStorage.getLogin();
+    if (responseModel == null) {
+      throw Exception('No stored user login response found.');
     }
-  }
 
-  Future<String> _refreshToken(
-      int userId, String userType, int companyId, String token) async {
-    final data = {
-      "userId": userId,
-      "userType": userType,
-      "companyId": companyId,
-      "refreshToken": token
-    };
-
-    Response? response = await refreshRepo.refreshRepo(data);
-
-    if (response != null &&
-        (response.statusCode == 200 || response.statusCode == 201)) {
-      RefreshModel newRefreshModel = RefreshModel.fromJson(response.data);
-      await refreshRepo.storeToken(newRefreshModel);
-      return newRefreshModel.accessToken;
-    } else {
-      throw Exception("Failed to refresh token. Please login again.");
+    final String? token = await _apiClient.getValidAccessToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Token handling failed: access token unavailable.');
     }
+
+    return token;
   }
 }

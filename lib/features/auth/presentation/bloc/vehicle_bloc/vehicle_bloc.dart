@@ -36,10 +36,10 @@
 // }
 
 import 'dart:async';
-import 'package:bloc/bloc.dart';
-import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../data/vehicle_model.dart';
 import '../../../domain/vehicle_repository.dart';
 
 part 'vehicle_event.dart';
@@ -56,24 +56,10 @@ class VehicleBloc extends Bloc<VehicleEvent, VehicleState> {
     emit(VehicleLoading());
 
     try {
-      final response = await vehicleRepository.getVehicleDetails();
-
-      if (response != null &&
-          (response.statusCode == 200 || response.statusCode == 201)) {
-        final List data = response.data;
-        print(data.runtimeType);
-        final List<String> vehicleBranchName = [];
-        final List vehicleId = [];
-        for (int i = 0; i < data.length; i++) {
-          vehicleBranchName.add(data[i]['branchName'].toString());
-        }
-        for (int i = 0; i < data.length; i++) {
-          vehicleId.add(data[i]['branchId']);
-        }
-        emit(VehicleLoaded(vehicleBranchName,vehicleId));
-      }
+      final List<VehicleModel> vehicles =
+          await vehicleRepository.getVehicleDetails();
+      emit(VehicleLoaded(vehicles));
     } catch (ex) {
-      print('Error occurred: $ex');
       emit(VehicleError('An error occurred: ${ex.toString()}'));
     }
   }

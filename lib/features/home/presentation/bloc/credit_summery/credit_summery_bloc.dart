@@ -1,7 +1,7 @@
 import 'package:Yadhava/features/home/domain/cashcreditsummeryRepo.dart';
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/credit_summery.dart';
 
 part 'credit_summery_event.dart';

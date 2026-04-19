@@ -43,7 +43,7 @@ class LocalDbHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE company_master (
@@ -180,6 +180,7 @@ class LocalDbHelper {
               routeId INTEGER,
               branchId INTEGER,
               branchName TEXT,
+              invoiceType TEXT,
               invoiceNo TEXT,
               invoiceDate TEXT,
               salesManId INTEGER,
@@ -194,6 +195,7 @@ class LocalDbHelper {
               totalCgstAmount REAL,
               totalCessAmount REAL,
               totalIgstAmount REAL,
+              roundOf REAL,
               netTotal REAL,
               payType TEXT,
               latitude TEXT,
@@ -234,7 +236,16 @@ class LocalDbHelper {
             totalQty REAL,
             unitRate REAL,
             totalRate REAL,
-            netRate REAL
+            netRate REAL,
+            gstPercentage REAL,
+            sgstPercentage REAL,
+            cgstPercentage REAL,
+            igstPercentage REAL,
+            taxableAmount REAL,
+            sgstAmount REAL,
+            cgstAmount REAL,
+            igstAmount REAL,
+            netAmount REAL
           )
         ''');
 
@@ -350,9 +361,16 @@ class LocalDbHelper {
             route_id INTEGER,
             vehicle_id INTEGER,
             vehicle_no TEXT,
+            invoice_type TEXT,
             total REAL,
             discount_percentage REAL,
             discount_amount REAL,
+            total_taxable_amount REAL,
+            total_sgst_amount REAL,
+            total_cgst_amount REAL,
+            total_igst_amount REAL,
+            total_cess_amount REAL,
+            round_of REAL,
             net_total REAL,
             transaction_year INTEGER,
             latitude REAL,
@@ -379,6 +397,15 @@ class LocalDbHelper {
             total_qty INTEGER,
             unit_rate REAL,
             total_rate REAL,
+            gst_percentage REAL,
+            sgst_percentage REAL,
+            cgst_percentage REAL,
+            igst_percentage REAL,
+            taxable_amount REAL,
+            sgst_amount REAL,
+            cgst_amount REAL,
+            igst_amount REAL,
+            net_amount REAL,
           
             FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
           );
@@ -396,6 +423,93 @@ class LocalDbHelper {
         if (oldVersion < 3) {
           await db.execute(
             'ALTER TABLE clients ADD COLUMN localProfileImagePath TEXT',
+          );
+        }
+        if (oldVersion < 4) {
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN invoice_type TEXT DEFAULT \'SALES_INVOICE\'',
+          );
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN total_taxable_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN total_sgst_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN total_cgst_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN total_igst_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN total_cess_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN gst_percentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN sgst_percentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN cgst_percentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN igst_percentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN taxable_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN sgst_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN cgst_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN igst_amount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE order_details ADD COLUMN net_amount REAL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 5) {
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master ADD COLUMN invoiceType TEXT DEFAULT \'SALES_INVOICE\'',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN gstPercentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN sgstPercentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN cgstPercentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN igstPercentage REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN taxableAmount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN sgstAmount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN cgstAmount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN igstAmount REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master_dt ADD COLUMN netAmount REAL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 6) {
+          await db.execute(
+            'ALTER TABLE orders ADD COLUMN round_of REAL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE mobile_app_sales_invoice_master ADD COLUMN roundOf REAL DEFAULT 0',
           );
         }
       },
@@ -432,9 +546,16 @@ class LocalDbHelper {
       'route_id': order.routeId,
       'vehicle_id': order.vehicleId,
       'vehicle_no': order.vehicleNo,
+      'invoice_type': order.invoiceType,
       'total': order.total,
       'discount_percentage': order.discountPercentage,
       'discount_amount': order.discountAmount,
+      'total_taxable_amount': order.totalTaxableAmount,
+      'total_sgst_amount': order.totalSgstAmount,
+      'total_cgst_amount': order.totalCgstAmount,
+      'total_igst_amount': order.totalIgstAmount,
+      'total_cess_amount': order.totalCessAmount,
+      'round_of': order.roundOf,
       'net_total': order.netTotal,
       'transaction_year': order.transactionYear,
       'latitude': order.latitude,
@@ -459,6 +580,15 @@ class LocalDbHelper {
         'total_qty': product.totalQty,
         'unit_rate': product.unitRate,
         'total_rate': product.totalRate,
+        'gst_percentage': product.gstPercentage,
+        'sgst_percentage': product.sgstPercentage,
+        'cgst_percentage': product.cgstPercentage,
+        'igst_percentage': product.igstPercentage,
+        'taxable_amount': product.taxableAmount,
+        'sgst_amount': product.sgstAmount,
+        'cgst_amount': product.cgstAmount,
+        'igst_amount': product.igstAmount,
+        'net_amount': product.netAmount,
       });
     }
 
@@ -530,8 +660,27 @@ class LocalDbHelper {
                 foc: item['foc'],
                 srtQty: item['srt_qty'],
                 totalQty: item['total_qty'],
+                companyId: orderRow['company_id'],
+                clientId: orderRow['client_id'],
+                invoiceId: orderRow['invoice_id'],
                 unitRate: (item['unit_rate'] as num).toDouble(),
                 totalRate: (item['total_rate'] as num).toDouble(),
+                gstPercentage:
+                    (item['gst_percentage'] as num?)?.toDouble() ?? 0.0,
+                sgstPercentage:
+                    (item['sgst_percentage'] as num?)?.toDouble() ?? 0.0,
+                cgstPercentage:
+                    (item['cgst_percentage'] as num?)?.toDouble() ?? 0.0,
+                igstPercentage:
+                    (item['igst_percentage'] as num?)?.toDouble() ?? 0.0,
+                cessPercentage: 0.0,
+                taxableAmount:
+                    (item['taxable_amount'] as num?)?.toDouble() ?? 0.0,
+                sgstAmount: (item['sgst_amount'] as num?)?.toDouble() ?? 0.0,
+                cgstAmount: (item['cgst_amount'] as num?)?.toDouble() ?? 0.0,
+                igstAmount: (item['igst_amount'] as num?)?.toDouble() ?? 0.0,
+                cessAmount: 0.0,
+                netAmount: (item['net_amount'] as num?)?.toDouble() ?? 0.0,
               ))
           .toList();
 
@@ -548,12 +697,25 @@ class LocalDbHelper {
         payType: orderRow['pay_type'],
         invoiceNo: orderRow['invoice_no'],
         invoiceDate: orderRow['invoice_date'],
+        receiptNo: '',
         routeId: orderRow['route_id'],
         vehicleId: orderRow['vehicle_id'],
         vehicleNo: orderRow['vehicle_no'],
+        invoiceType: orderRow['invoice_type'] ?? 'SALES_INVOICE',
         total: (orderRow['total'] as num).toDouble(),
         discountPercentage: (orderRow['discount_percentage'] as num).toDouble(),
-        discountAmount: orderRow['discount_amount'],
+        discountAmount: (orderRow['discount_amount'] as num).toDouble(),
+        totalTaxableAmount:
+            (orderRow['total_taxable_amount'] as num?)?.toDouble() ?? 0.0,
+        totalSgstAmount:
+            (orderRow['total_sgst_amount'] as num?)?.toDouble() ?? 0.0,
+        totalCgstAmount:
+            (orderRow['total_cgst_amount'] as num?)?.toDouble() ?? 0.0,
+        totalIgstAmount:
+            (orderRow['total_igst_amount'] as num?)?.toDouble() ?? 0.0,
+        totalCessAmount:
+            (orderRow['total_cess_amount'] as num?)?.toDouble() ?? 0.0,
+        roundOf: (orderRow['round_of'] as num?)?.toDouble() ?? 0.0,
         netTotal: (orderRow['net_total'] as num).toDouble(),
         transactionYear: orderRow['transaction_year'],
         latitude: (orderRow['latitude'] as num).toDouble(),
@@ -1016,7 +1178,7 @@ class LocalDbHelper {
       for (final invoice in invoices ?? []) {
         batch.insert(
           'mobile_app_sales_invoice_master',
-          invoice.toJson(),
+          invoice.toDbJson(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1024,7 +1186,7 @@ class LocalDbHelper {
       for (final invoice in invoicesDt ?? []) {
         batch.insert(
           'mobile_app_sales_invoice_master_dt',
-          invoice.toJson(),
+          invoice.toDbJson(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1062,7 +1224,7 @@ class LocalDbHelper {
       for (final invoice in invoices ?? []) {
         batch.insert(
           'mobile_app_sales_invoice_master',
-          invoice.toJson(),
+          invoice.toDbJson(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1070,7 +1232,7 @@ class LocalDbHelper {
       for (final invoice in invoicesDt ?? []) {
         batch.insert(
           'mobile_app_sales_invoice_master_dt',
-          invoice.toJson(),
+          invoice.toDbJson(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1099,7 +1261,7 @@ class LocalDbHelper {
 
         batch.insert(
           'mobile_app_sales_invoice_master',
-          invoice.toJson(),
+          invoice.toDbJson(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1107,7 +1269,7 @@ class LocalDbHelper {
       for (final invoice in invoicesDt ?? []) {
         batch.insert(
           'mobile_app_sales_invoice_master_dt',
-          invoice.toJson(),
+          invoice.toDbJson(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -1160,6 +1322,24 @@ class LocalDbHelper {
                     routeId: d['routeId'] as int,
                     packQty: d['packQty'] as int,
                     netRate: (d['netRate'] as num).toDouble(),
+                    gstPercentage:
+                        (d['gstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    sgstPercentage:
+                        (d['sgstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    cgstPercentage:
+                        (d['cgstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    igstPercentage:
+                        (d['igstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    cessPercentage:
+                        (d['cessPercentage'] as num?)?.toDouble() ?? 0.0,
+                    taxableAmount: (d['taxableAmount'] as num?)?.toDouble() ??
+                        (d['totalRate'] as num).toDouble(),
+                    sgstAmount: (d['sgstAmount'] as num?)?.toDouble() ?? 0.0,
+                    cgstAmount: (d['cgstAmount'] as num?)?.toDouble() ?? 0.0,
+                    igstAmount: (d['igstAmount'] as num?)?.toDouble() ?? 0.0,
+                    cessAmount: (d['cessAmount'] as num?)?.toDouble() ?? 0.0,
+                    netAmount: (d['netAmount'] as num?)?.toDouble() ??
+                        (d['totalRate'] as num).toDouble(),
                     invoiceNo: row['invoiceNo']?.toString() ?? '',
                     invoiceId: d['invoiceId'] as int,
                     invoiceDate: d['invoiceDate']?.toString() ?? '',
@@ -1187,6 +1367,7 @@ class LocalDbHelper {
             routeId: row['routeId'] as int ?? 0,
             branchId: row['branchId'] as int ?? 0,
             branchName: row['branchName']?.toString() ?? '',
+            invoiceType: row['invoiceType']?.toString() ?? 'SALES_INVOICE',
             netTotal: (row['netTotal'] as num).toDouble(),
             totalAmount: (row['totalAmount'] as num).toDouble(),
             totalDiscountVal: (row['totalDiscountVal'] as num).toDouble(),
@@ -1197,6 +1378,7 @@ class LocalDbHelper {
             totalIgstAmount: (row['totalIgstAmount'] as num).toDouble(),
             totalCgstAmount: (row['totalCgstAmount'] as num).toDouble(),
             totalCessAmount: (row['totalCessAmount'] as num).toDouble(),
+            roundOf: (row['roundOf'] as num?)?.toDouble() ?? 0.0,
             srtVoucherNo: row['srtVoucherNo']?.toString() ?? '',
             receiptNo: row['receiptNo']?.toString() ?? '',
             longitude: row['longitude']?.toString() ?? '',
@@ -1246,6 +1428,24 @@ class LocalDbHelper {
                     routeId: d['routeId'] as int,
                     packQty: d['packQty'] as int,
                     netRate: (d['netRate'] as num).toDouble(),
+                    gstPercentage:
+                        (d['gstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    sgstPercentage:
+                        (d['sgstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    cgstPercentage:
+                        (d['cgstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    igstPercentage:
+                        (d['igstPercentage'] as num?)?.toDouble() ?? 0.0,
+                    cessPercentage:
+                        (d['cessPercentage'] as num?)?.toDouble() ?? 0.0,
+                    taxableAmount: (d['taxableAmount'] as num?)?.toDouble() ??
+                        (d['totalRate'] as num).toDouble(),
+                    sgstAmount: (d['sgstAmount'] as num?)?.toDouble() ?? 0.0,
+                    cgstAmount: (d['cgstAmount'] as num?)?.toDouble() ?? 0.0,
+                    igstAmount: (d['igstAmount'] as num?)?.toDouble() ?? 0.0,
+                    cessAmount: (d['cessAmount'] as num?)?.toDouble() ?? 0.0,
+                    netAmount: (d['netAmount'] as num?)?.toDouble() ??
+                        (d['totalRate'] as num).toDouble(),
                     invoiceNo: row['invoiceNo']?.toString() ?? '',
                     invoiceId: d['invoiceId'] as int,
                     invoiceDate: d['invoiceDate']?.toString() ?? '',
@@ -1272,6 +1472,7 @@ class LocalDbHelper {
               routeId: row['routeId'] as int,
               branchId: row['vehicleId'] as int,
               branchName: row['vehicleNo']?.toString() ?? '',
+              invoiceType: row['invoiceType']?.toString() ?? 'SALES_INVOICE',
               netTotal: (row['netTotal'] as num).toDouble(),
               totalAmount: (row['total'] as num).toDouble(),
               totalDiscountVal: (row['discountAmount'] as num).toDouble(),
@@ -1282,6 +1483,7 @@ class LocalDbHelper {
               totalIgstAmount: (row['totalIgstAmount'] as num).toDouble(),
               totalCgstAmount: (row['totalCgstAmount'] as num).toDouble(),
               totalCessAmount: (row['totalCessAmount'] as num).toDouble(),
+              roundOf: (row['roundOf'] as num?)?.toDouble() ?? 0.0,
               srtVoucherNo: row['srtVoucherNo']?.toString() ?? '',
               receiptNo: row['receiptNo']?.toString() ?? '',
               longitude: row['longitude']?.toString() ?? '',
@@ -1311,6 +1513,7 @@ class LocalDbHelper {
           routeId: row.routeId,
           branchId: row.vehicleId,
           branchName: row.vehicleNo,
+          invoiceType: row.invoiceType,
           netTotal: row.netTotal,
           totalAmount: row.total,
           totalDiscountVal: row.discountAmount,
@@ -1321,6 +1524,7 @@ class LocalDbHelper {
           totalIgstAmount: 0,
           totalCgstAmount: 0,
           totalCessAmount: 0,
+          roundOf: row.roundOf,
           srtVoucherNo: '',
           receiptNo: '',
           longitude: row.longitude.toString(),

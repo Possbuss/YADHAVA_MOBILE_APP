@@ -1,16 +1,11 @@
 import 'dart:developer';
 import 'dart:io';
 
-// ignore: depend_on_referenced_packages
-import 'package:Yadhava/features/customer/presentation/bloc/client_bloc/client_list_bloc.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/product_master.dart';
-import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
-import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -18,13 +13,11 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../../../../../core/constants/api_constants.dart';
 import '../../../../../../core/util/api_query.dart';
 import '../../../../../../core/util/local_db_helper.dart';
-import '../../../../../../core/util/session.dart';
 import '../../../../../auth/data/login_model.dart';
 import '../../../../../auth/domain/login_repo.dart';
 import '../../../../domain/order_repo.dart';
 import '../../../../model/orderModel.dart';
 import '../../../../model/response_message_invoice.dart';
-import '../model/addItem_model.dart';
 import '../model/order_model.dart';
 
 part 'add_item_event.dart';
@@ -38,7 +31,8 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
   List<ProductMaster> fetchedItems = [];
   List<SalesInvoiceDetail> sales = [];
   final OrderRepo _orderRepo;
-  bool _itemsFetched = false; // Add this flag
+  final ApiQuery _apiQuery = ApiQuery();
+  final GetLoginRepo _loginRepo = GetLoginRepo();
   int total = 0;
 
   bool _isSavingInvoice = false;
@@ -61,17 +55,14 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
     try {
       var db = LocalDbHelper();
       bool isRefreshNeed = await db.shouldRefreshProductList();
-      LoginModel? storedResponse = await GetLoginRepo().getUserLoginResponse();
+      LoginModel? storedResponse = await _loginRepo.getUserLoginResponse();
       if (isRefreshNeed) {
-        Session session = Session();
-        ApiQuery apiQuery = ApiQuery();
-        String token = await session.tokenExpired();
         LoginModel? storedResponse =
-            await GetLoginRepo().getUserLoginResponse();
+            await _loginRepo.getUserLoginResponse();
         String routeUrl =
             '${ApiConstants.productList}companyId=${storedResponse!.companyId}';
 
-        Response? response = await apiQuery.getQuery(routeUrl, token);
+        Response? response = await _apiQuery.getQuery(routeUrl);
         if (response != null && response.statusCode == 200) {
           final data = response.data as List<dynamic>;
           final lastInvoicedetails =
@@ -93,7 +84,7 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
       FetchItems event, Emitter<AddItemState> emit) async {
     try {
       var db = LocalDbHelper();
-      LoginModel? storedResponse = await GetLoginRepo().getUserLoginResponse();
+      LoginModel? storedResponse = await _loginRepo.getUserLoginResponse();
       final data = await db.getProductMaster(storedResponse!.companyId);
       emit(ItemsFetchedState(data));
     } catch (e) {
@@ -153,22 +144,17 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
       final db = LocalDbHelper();
       final List<OrderModel> pendingOrders = await db.getPendingOrders();
 
-      final dio = Dio();
-      Session session = Session();
-      String url = '${ApiConstants.baseUrl}${ApiConstants.createSalesInvoice}';
-
-      String token = await session.tokenExpired();
-      dio.options.headers['Authorization'] = 'Bearer $token';
-      dio.options.headers['Content-Type'] = 'application/json';
-
       for (final order in pendingOrders) {
-        final response = await dio.post(url, data: order.toJson());
+        final Response? response = await _apiQuery.postQuery(
+          ApiConstants.createSalesInvoice,
+          order.toJson(),
+        );
 
-        if (response.statusCode == 200) {
-          bool responseStatus = response.data['result'] ?? false;
+        if (response?.statusCode == 200) {
+          bool responseStatus = response?.data['result'] ?? false;
           if (responseStatus) {
             var responseMessageMobileSalesInvoice =
-                ResponseMessageMobileSalesInvoice.fromJson(response.data);
+                ResponseMessageMobileSalesInvoice.fromJson(response!.data);
 
             if (responseMessageMobileSalesInvoice.result) {
               var db = LocalDbHelper();
@@ -250,6 +236,8 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
         emit(SalesInvoicesSyncError('An error occurred: ${e.message}'));
         //emit(ItemsFetchErrorState('An error occurred: ${e.message}'));
       }
+    } catch (e) {
+      emit(SalesInvoicesSyncError('Failed to sync invoices: $e'));
     }
   }
 
@@ -260,7 +248,6 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
   Future<void> _syncOrdersInBackgroundLocally([int orderId = 0]) async {
     try {
       if (_isSyncing) {
-        print('Sync already in progress — skipping new request.');
         return;
       }
 
@@ -269,22 +256,17 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
       final db = LocalDbHelper();
       final List<OrderModel> pendingOrders = await db.getPendingOrders(orderId);
 
-      final dio = Dio();
-      Session session = Session();
-      String url = '${ApiConstants.baseUrl}${ApiConstants.createSalesInvoice}';
-
-      String token = await session.tokenExpired();
-      dio.options.headers['Authorization'] = 'Bearer $token';
-      dio.options.headers['Content-Type'] = 'application/json';
-
       for (final order in pendingOrders) {
-        final response = await dio.post(url, data: order.toJson());
+        final Response? response = await _apiQuery.postQuery(
+          ApiConstants.createSalesInvoice,
+          order.toJson(),
+        );
 
-        if (response.statusCode == 200) {
-          bool responseStatus = response.data['result'] ?? false;
+        if (response?.statusCode == 200) {
+          bool responseStatus = response?.data['result'] ?? false;
           if (responseStatus) {
             var responseMessageMobileSalesInvoice =
-                ResponseMessageMobileSalesInvoice.fromJson(response.data);
+                ResponseMessageMobileSalesInvoice.fromJson(response!.data);
 
             if (responseMessageMobileSalesInvoice.result) {
               var db = LocalDbHelper();
@@ -343,7 +325,6 @@ class AddItemBloc extends Bloc<AddItemEvent, AddItemState> {
                   order.companyId);
 
               // ✅ Mark local order as "synced"
-
 
               //emit(const ItemPostedState('order created successfully!'));
               //emit(ItemPostedSuccess(responseMessageMobileSalesInvoice.iDs));

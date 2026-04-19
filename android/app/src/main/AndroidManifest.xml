@@ -16,7 +16,8 @@
         android:label="Yadhava"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true">
 
         <!-- 🧭 Main Flutter Activity -->
         <activity

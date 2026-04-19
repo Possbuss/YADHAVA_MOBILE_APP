@@ -8,6 +8,7 @@ import '../../../../auth/domain/login_repo.dart';
 import '../../../../home/presentation/pages/home_page.dart';
 import '../../../data/client_model.dart';
 import '../../bloc/inovice_bloc/invoice_bloc.dart';
+import '../customer_details/bloc/add_item_bloc.dart';
 //import '../../widgets/invoice/build_appbar.dart';
 import '../../widgets/invoice/build_invoicelist.dart';
 import '../../widgets/invoice/build_screen.dart';
@@ -74,46 +75,61 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   void _fetchInvoices() async {
-
     GetLoginRepo loginRepo = GetLoginRepo();
     LoginModel? loginModel = await loginRepo.getUserLoginResponse();
     if (loginModel == null) {
       throw Exception("User login response is null");
     }
 
-    context.read<InvoiceBloc>().add(
-        FetchInvoiceEvent(
-            vehicleId: loginModel.vehicleId,
-            salesmanId: loginModel.driverId,
-            companyId: loginModel.companyId,
-            clientId: widget.client.id ?? 0,
-            routeId: loginModel.routeId
-        )
-    );
+    context.read<InvoiceBloc>().add(FetchInvoiceEvent(
+        vehicleId: loginModel.vehicleId,
+        salesmanId: loginModel.driverId,
+        companyId: loginModel.companyId,
+        clientId: widget.client.id ?? 0,
+        routeId: loginModel.routeId));
   }
 
   @override
   Widget build(BuildContext context) {
     if (!isDataFetched) return buildLoadingScreen(context);
 
-    final String customerName = widget.client.contactPersonName?.trim().isNotEmpty ==
-            true
-        ? widget.client.contactPersonName!.trim()
-        : (widget.client.name?.trim().isNotEmpty == true
-            ? widget.client.name!.trim()
-            : 'Customer Invoices');
+    final String customerName =
+        widget.client.contactPersonName?.trim().isNotEmpty == true
+            ? widget.client.contactPersonName!.trim()
+            : (widget.client.name?.trim().isNotEmpty == true
+                ? widget.client.name!.trim()
+                : 'Customer Invoices');
 
-    return BlocListener<InvoiceBloc, InvoiceState>(
-      // listener: (context, state) {
-      //   if (state is InvoiceLoaded) {
-      //     setState(() {});
-      //   }
-      // },
-      listener: (context, state) {
-        if (state is InvoiceLoaded) {
-          refreshIndicatorKey.currentState?.show(); // Force RefreshIndicator
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<InvoiceBloc, InvoiceState>(
+          listener: (context, state) {
+            if (state is InvoiceLoaded) {
+              refreshIndicatorKey.currentState?.show();
+            }
+          },
+        ),
+        BlocListener<AddItemBloc, AddItemState>(
+          listener: (context, state) {
+            if (state is SalesInvoicesSynced) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Invoices synced successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              _fetchInvoices();
+            } else if (state is SalesInvoicesSyncError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.error),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         backgroundColor: Colour.pBackgroundBlack,
         appBar: AppBar(
@@ -148,34 +164,108 @@ class _InvoicePageState extends State<InvoicePage> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colour.pDeepLightBlue.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colour.pDeepLightBlue.withValues(alpha: 0.18),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colour.pDeepLightBlue.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  Colour.pDeepLightBlue.withValues(alpha: 0.18),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          customerName.toUpperCase(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    customerName.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.4,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  BlocBuilder<AddItemBloc, AddItemState>(
+                    builder: (context, syncState) {
+                      final bool isSyncing = syncState is SyncingSalesInvoices;
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: isSyncing
+                              ? null
+                              : () {
+                                  context.read<AddItemBloc>().add(
+                                        SyncInvoices(),
+                                      );
+                                },
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 11,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colour.pDeepLightBlue.withValues(
+                                alpha: isSyncing ? 0.16 : 0.24,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colour.pDeepLightBlue.withValues(
+                                  alpha: 0.45,
+                                ),
+                              ),
+                            ),
+                            child: isSyncing
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.sync,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Sync',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             Expanded(
