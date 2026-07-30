@@ -528,7 +528,6 @@ import 'package:Yadhava/features/customer/presentation/pages/Invoice_pages/Invoi
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/widget/custom_button.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/widget/delete_pop.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/widget/item_card.dart';
-import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -541,18 +540,14 @@ import '../../../../../core/util/format_rupees.dart';
 import '../../../../../core/widget/custom_popup.dart';
 import '../../../../auth/data/login_model.dart';
 import '../../../../auth/domain/login_repo.dart';
-import '../../../../home/presentation/bloc/stockList_bloc/stock_list_bloc.dart';
-import '../../../../home/presentation/bloc/totalSales_bloc/bloc/total_sales_bloc.dart';
 import '../../../data/client_model.dart';
 import '../../../domain/order_repo.dart';
 import '../../../model/orderModel.dart';
-import '../../bloc/client_bloc/client_list_bloc.dart';
 import '../../bloc/inovice_bloc/invoice_bloc.dart';
 import '../Invoice_pages/widgets/discount_field.dart';
 import '../cash_recept/cash_recept.dart';
 import 'add_items.dart';
 import 'bloc/add_item_bloc.dart';
-import 'model/order_model.dart';
 
 class CustomerDetails extends StatefulWidget {
   final ClientModel client;
@@ -714,8 +709,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                     ),
                   );
                 },
-                child: const Icon(Icons.list_alt),
                 heroTag: "fab1",
+                child: const Icon(Icons.list_alt),
               ),
               const SizedBox(height: 10),
               FloatingActionButton.small(
@@ -729,8 +724,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                   );
                   refreshIndicatorKey.currentState?.show();
                 },
-                child: const Icon(Icons.receipt_long),
                 heroTag: "fab2",
+                child: const Icon(Icons.receipt_long),
               ),
               const SizedBox(height: 10),
             ],
@@ -740,8 +735,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                   isExpanded = !isExpanded;
                 });
               },
-              child: Icon(isExpanded ? Icons.close : Icons.menu),
               heroTag: "mainFab",
+              child: Icon(isExpanded ? Icons.close : Icons.menu),
             ),
           ],
         ),
@@ -1015,7 +1010,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                             vehicleId: widget.vehicleId,
                             salesmanId: loginModel.driverId,
                             companyId: loginModel.companyId,
-                            clientId: widget.client!.id ?? 0,
+                            clientId: widget.client.id ?? 0,
                             routeId: loginModel.routeId
                           )
                           );

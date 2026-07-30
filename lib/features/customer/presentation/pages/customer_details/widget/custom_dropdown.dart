@@ -31,7 +31,7 @@ class ReusableDropdown extends StatelessWidget {
         DropdownButtonFormField<String>(
 
           isExpanded: true,
-          value: initialValue,
+          initialValue: initialValue,
           dropdownColor: Colour.lightblack,
           decoration: InputDecoration(
             enabledBorder: const OutlineInputBorder(

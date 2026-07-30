@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:Yadhava/core/constants/api_constants.dart';
 import 'package:Yadhava/core/util/api_query.dart';
 import 'package:Yadhava/core/util/local_db_helper.dart';
@@ -106,7 +105,7 @@ class LastInvoiceRepository {
     }
     catch(ex){
       print(ex);
-      throw ex;
+      rethrow;
     }
   }
 

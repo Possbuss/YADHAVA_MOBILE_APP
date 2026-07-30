@@ -94,6 +94,8 @@ class CustomerCard extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final bool clientIsActive = isActive.trim().toUpperCase() == 'Y';
+
     return Row(
       children: [
         _buildAvatar(),
@@ -124,6 +126,36 @@ class CustomerCard extends StatelessWidget {
                     color: Colors.white70,
                   ),
                 ),
+              const SizedBox(height: 3),
+              Semantics(
+                label:
+                    clientIsActive ? 'Client is active' : 'Client is inactive',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      clientIsActive
+                          ? Icons.notifications_active_outlined
+                          : Icons.notifications_off_outlined,
+                      size: 14,
+                      color: clientIsActive
+                          ? const Color(0xFFB9FFBD)
+                          : const Color(0xFFFFD0D0),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      clientIsActive ? 'Active' : 'Inactive',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: clientIsActive
+                            ? const Color(0xFFB9FFBD)
+                            : const Color(0xFFFFD0D0),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -145,7 +177,7 @@ class CustomerCard extends StatelessWidget {
         ],
         const SizedBox(width: 6),
         _buildCircleAction(
-          color: isActive == 'Y' ? Colors.green : Colors.red,
+          color: Colors.green,
           icon: Icons.edit_outlined,
           onPressed: onTap2,
         ),

@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/constants/color.dart';
@@ -46,7 +45,7 @@ class VoucherCustomDropDown extends StatelessWidget {
                 validator:validator ,
                 dropdownColor: Colour.blackgery,
                 focusColor: Colour.blackgery,
-                value: items.contains(selectedValue) ? selectedValue : null,
+                initialValue: items.contains(selectedValue) ? selectedValue : null,
                 hint: Text(
                   selectedValue,
                   style: const TextStyle(color: Colors.white), // Updated hint text color

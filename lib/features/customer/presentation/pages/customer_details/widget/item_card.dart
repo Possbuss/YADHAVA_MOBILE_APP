@@ -55,7 +55,7 @@ class ItemCard extends StatelessWidget {
                       style: TextStyle(color: Colour.mediumGray, fontSize: 12),
                     ),
                     Text(
-                      "$code",
+                      code,
                       style: const TextStyle(color: Colour.SilverGrey, fontSize: 12),
                     ),
                   ],
@@ -85,7 +85,7 @@ class ItemCard extends StatelessWidget {
                           fontSize: 12), // Header color
                     ),
                     Text(
-                      "$quantity",
+                      quantity,
                       style: const TextStyle(
                           color: Colour.SilverGrey,
                           fontSize: 12), // Value color
@@ -101,7 +101,7 @@ class ItemCard extends StatelessWidget {
                           fontSize: 12), // Header color
                     ),
                     Text(
-                      "$factor",
+                      factor,
                       style: const TextStyle(
                           color: Colour.SilverGrey,
                           fontSize: 12), // Value color
@@ -117,7 +117,7 @@ class ItemCard extends StatelessWidget {
                           fontSize: 12), // Header color
                     ),
                     Text(
-                      "$srt",
+                      srt,
                       style: const TextStyle(
                           color: Colour.SilverGrey,
                           fontSize: 12), // Value color
@@ -133,7 +133,7 @@ class ItemCard extends StatelessWidget {
                           fontSize: 12), // Header color
                     ),
                     Text(
-                      "$unit",
+                      unit,
                       style: const TextStyle(
                           color: Colour.SilverGrey,
                           fontSize: 12), // Value color
@@ -149,7 +149,7 @@ class ItemCard extends StatelessWidget {
                           fontSize: 12), // Header color
                     ),
                     Text(
-                      "$sellPrice",
+                      sellPrice,
                       style: const TextStyle(
                           color: Colour.SilverGrey,
                           fontSize: 12), // Value color
@@ -165,7 +165,7 @@ class ItemCard extends StatelessWidget {
                           fontSize: 12), // Header color
                     ),
                     Text(
-                      "$total",
+                      total,
                       style: const TextStyle(
                           color: Colour.SilverGrey,
                           fontSize: 12), // Value color

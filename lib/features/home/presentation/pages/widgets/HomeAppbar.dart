@@ -17,7 +17,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final FocusNode? focusNode;
   final bool? obscureText;
 
-  HomeAppBar({
+  const HomeAppBar({
     super.key,
     required this.userName,
     this.controller,

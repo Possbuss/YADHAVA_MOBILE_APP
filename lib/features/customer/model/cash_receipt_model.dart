@@ -84,7 +84,6 @@
 //
 //     final cashReceiptModel = cashReceiptModelFromJson(jsonString);
 
-import 'package:meta/meta.dart';
 import 'dart:convert';
 
 List<CashReceiptModel> cashReceiptModelFromJson(String str) => List<CashReceiptModel>.from(json.decode(str).map((x) => CashReceiptModel.fromJson(x)));

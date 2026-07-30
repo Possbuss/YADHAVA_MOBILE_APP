@@ -23,7 +23,7 @@ class HomeScreenRepo {
       log('${ApiConstants.totalSales}companyId=${storedResponse!.companyId}&vehicleId=${storedResponse.vehicleId}&invoiceDate=$formattedDate');
 
       final response = await apiQuery.getQuery(
-          '${ApiConstants.totalSales}companyId=${storedResponse!.companyId}&vehicleId=${storedResponse.vehicleId}&invoiceDate=$formattedDate',
+          '${ApiConstants.totalSales}companyId=${storedResponse.companyId}&vehicleId=${storedResponse.vehicleId}&invoiceDate=$formattedDate',
           token);
 
       return response;

@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/constants/color.dart';
 import '../../../../../core/constants/textthemes.dart';
 import '../../../data/client_model.dart';
+import '../../../data/local/invoice_draft_local_data_source.dart';
 import '../../bloc/last_invoice_bloc/lastinvoice_bloc.dart';
 import '../Invoice_pages/Invoice_page.dart';
 import '../cash_recept/cash_recept.dart';
@@ -18,11 +19,13 @@ import 'invoice_summery.dart';
 class SelectedItemList extends StatefulWidget {
   final ClientModel client;
   final int? partyId;
+  final List<ProductItem>? draftItems;
 
   const SelectedItemList({
     super.key,
     required this.client,
     this.partyId,
+    this.draftItems,
   });
 
   @override
@@ -30,7 +33,7 @@ class SelectedItemList extends StatefulWidget {
 }
 
 class _SelectedItemListState extends State<SelectedItemList>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   bool isExpanded = false;
   final GlobalKey<RefreshIndicatorState> refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
@@ -47,9 +50,20 @@ class _SelectedItemListState extends State<SelectedItemList>
   List<ProductItem> productList = [];
   List<bool> isItemAdded = [];
   Set<int> selectedProductIds = {};
+  final InvoiceDraftLocalDataSource _draftStore = InvoiceDraftLocalDataSource();
+  late bool _detailsInitialized;
+  bool _keepDraft = true;
+  bool _allowPop = false;
 
   @override
   void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _detailsInitialized = widget.draftItems != null;
+    if (widget.draftItems != null) {
+      details = List<ProductItem>.from(widget.draftItems!);
+    }
+    _saveDraft();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_hasRefreshed) {
         _hasRefreshed = true;
@@ -62,15 +76,83 @@ class _SelectedItemListState extends State<SelectedItemList>
     context
         .read<LastInvoiceBloc>()
         .add(FetchLastInvoice(widget.client.id ?? 0));
-    super.initState();
     _controller = AnimationController(vsync: this);
     // _calculateTotalAmount();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (_keepDraft) {
+      _saveDraft();
+    }
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _saveDraft();
+    }
+  }
+
+  Future<void> _saveDraft() {
+    return _draftStore.save(client: widget.client, items: details);
+  }
+
+  Future<void> _handleBack() async {
+    if (!_keepDraft) {
+      setState(() {
+        _allowPop = true;
+      });
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final action = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Unfinished invoice'),
+        content: Text(
+          'Keep this invoice for ${widget.client.name ?? 'this client'} '
+          'and continue it later?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('continue'),
+            child: const Text('Continue editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('discard'),
+            child: const Text('Discard'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop('keep'),
+            child: const Text('Keep draft'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || action == null || action == 'continue') {
+      return;
+    }
+    if (action == 'discard') {
+      _keepDraft = false;
+      await _draftStore.clear();
+    } else {
+      await _saveDraft();
+    }
+    if (mounted) {
+      setState(() {
+        _allowPop = true;
+      });
+      Navigator.of(context).pop();
+    }
   }
 
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
@@ -95,258 +177,278 @@ class _SelectedItemListState extends State<SelectedItemList>
       GlobalKey<DropdownSearchState<String>>();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Items List",
-          style: AppTextThemes.appbarHomeHeading,
-        ),
-        centerTitle: true,
-        backgroundColor: Colour.pBackgroundBlack,
-        actions: [
-          Padding(
-              padding: const EdgeInsets.only(right: 15.0),
-              child: IconButton(
-                  onPressed: () => _showItemList(context),
-                  icon: Icon(
-                    Icons.view_list,
-                    color: Colors.white,
-                  )))
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isExpanded) ...[
-            FloatingActionButton.small(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => InvoicePage(
-                      client: widget.client,
-                      partyId: widget.partyId,
-                    ),
-                  ),
-                );
-              },
-              heroTag: "fab1",
-              child: const Icon(Icons.list_alt),
-            ),
-            const SizedBox(height: 10),
-            FloatingActionButton.small(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => CashRecept(
-                            clientId: widget.partyId,
-                          )),
-                );
-                refreshIndicatorKey.currentState?.show();
-              },
-              heroTag: "fab2",
-              child: const Icon(Icons.receipt_long),
-            ),
-            const SizedBox(height: 10),
-            FloatingActionButton.small(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QuotationRegisterPage(
-                      client: widget.client,
-                    ),
-                  ),
-                );
-              },
-              heroTag: "fabQuotation",
-              child: const Icon(Icons.request_quote_outlined),
-            ),
-            const SizedBox(height: 10),
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _handleBack();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            "Items List",
+            style: AppTextThemes.appbarHomeHeading,
+          ),
+          centerTitle: true,
+          backgroundColor: Colour.pBackgroundBlack,
+          actions: [
+            Padding(
+                padding: const EdgeInsets.only(right: 15.0),
+                child: IconButton(
+                    onPressed: () => _showItemList(context),
+                    icon: Icon(
+                      Icons.view_list,
+                      color: Colors.white,
+                    )))
           ],
-          FloatingActionButton(
-            onPressed: () {
-              setState(() {
-                isExpanded = !isExpanded;
-              });
-            },
-            heroTag: "mainFab",
-            child: Icon(isExpanded ? Icons.close : Icons.menu),
-          ),
-        ],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      backgroundColor: Colour.pBackgroundBlack,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(left: 10.0),
-            child: const Text('Item List',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colour.mediumGray)),
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: BlocBuilder<LastInvoiceBloc, LastInvoiceState>(
-              builder: (context, state) {
-                if (state is LastInvoiceLoaded) {
-                  details = state.invoice;
-                  lastInvoiceCount = details.length;
-                  if (details.isEmpty) {
-                    return Center(
-                      child: Text(
-                        "Add Items",
-                        style: TextStyle(color: Colour.pWhite),
+        ),
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isExpanded) ...[
+              FloatingActionButton.small(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => InvoicePage(
+                        client: widget.client,
+                        partyId: widget.partyId,
                       ),
-                    );
-                  } else {
-                    return ListView.builder(
-                      itemCount: details.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final item = details[index];
-
-                        return Dismissible(
-                          key: ValueKey(item.partNumber), // Unique key per item
-                          direction: DismissDirection.startToEnd, // Swipe right
-                          background: Container(
-                            color: Colors.red,
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.only(left: 20),
-                            child:
-                                const Icon(Icons.delete, color: Colors.white),
-                          ),
-                          confirmDismiss: (direction) async {
-                            if (details.length == 1) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text('At least one item must remain.')),
-                              );
-                              return false; // Cancel the dismissal
-                            }
-                            return true; // Allow the dismissal
-                          },
-                          onDismissed: (direction) {
-                            setState(() {
-                              details.removeAt(index);
-                            });
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text('${item.productName} removed')),
-                            );
-                          },
-                          child: ItemCard(
-                            totalAmount: item.totalRate,
-                            srt: item.srt.toString(),
-                            name: item.productName,
-                            code: item.partNumber,
-                            quantity: item.quantity.toString(),
-                            foc: item.fac.toString(),
-                            sellingPrice: item.sell,
-                            uom: item.uom,
-                            productId: item.productId,
-                            packingName: item.packingName,
-                            packingDescription: item.packingDescription,
-                            packingId: item.packingId,
-                            onUpdate: (updatedItem) {
-                              setState(() {
-                                details[index] = updatedItem;
-                              });
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  }
-                } else if (state is LastInvoiceError) {
-                  return Center(
-                    child: Text("No Invoices"),
+                    ),
                   );
-                } else {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                },
+                heroTag: "fab1",
+                child: const Icon(Icons.list_alt),
+              ),
+              const SizedBox(height: 10),
+              FloatingActionButton.small(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CashRecept(
+                              clientId: widget.partyId,
+                            )),
+                  );
+                  refreshIndicatorKey.currentState?.show();
+                },
+                heroTag: "fab2",
+                child: const Icon(Icons.receipt_long),
+              ),
+              const SizedBox(height: 10),
+              FloatingActionButton.small(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => QuotationRegisterPage(
+                        client: widget.client,
+                      ),
+                    ),
+                  );
+                },
+                heroTag: "fabQuotation",
+                child: const Icon(Icons.request_quote_outlined),
+              ),
+              const SizedBox(height: 10),
+            ],
+            FloatingActionButton(
+              onPressed: () {
+                setState(() {
+                  isExpanded = !isExpanded;
+                });
               },
+              heroTag: "mainFab",
+              child: Icon(isExpanded ? Icons.close : Icons.menu),
             ),
-          ),
-          SafeArea(
-            //height: MediaQuery.of(context).size.height * .11,
-            bottom: true,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0)
-                  .copyWith(bottom: 16.0), // const EdgeInsets.only(left: 50),
-
-              child: SizedBox(
-                //width: double.infinity,
-                width: MediaQuery.of(context).size.width *
-                    0.5, // half screen width
-                height: 50, // you can adjust height
-                child: ElevatedButton(
-                  onPressed: () {
-                    print("list length${details.length}");
-                    double totalamount = 0;
-                    int size = details.length;
-                    for (int s = 0; s < size; s++) {
-                      totalamount += details[s].totalRate;
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        backgroundColor: Colour.pBackgroundBlack,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(left: 10.0),
+              child: const Text('Item List',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colour.mediumGray)),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: BlocBuilder<LastInvoiceBloc, LastInvoiceState>(
+                builder: (context, state) {
+                  if (state is LastInvoiceLoaded) {
+                    if (!_detailsInitialized) {
+                      details = List<ProductItem>.from(state.invoice);
+                      _detailsInitialized = true;
+                      _saveDraft();
                     }
-
-                    print("5555555555555555555");
-                    print(totalamount);
-                    print("5555555555555555555");
-
-                    if (totalamount != 0) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SummeryPage(
-                            selectedItemList: details,
-                            client: widget.client,
-                          ),
+                    lastInvoiceCount = details.length;
+                    if (details.isEmpty) {
+                      return Center(
+                        child: Text(
+                          "Add Items",
+                          style: TextStyle(color: Colour.pWhite),
                         ),
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Total amount is 0'),
-                          duration: Duration(seconds: 2),
-                        ),
+                      return ListView.builder(
+                        itemCount: details.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final item = details[index];
+
+                          return Dismissible(
+                            key: ValueKey(
+                                item.partNumber), // Unique key per item
+                            direction:
+                                DismissDirection.startToEnd, // Swipe right
+                            background: Container(
+                              color: Colors.red,
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.only(left: 20),
+                              child:
+                                  const Icon(Icons.delete, color: Colors.white),
+                            ),
+                            confirmDismiss: (direction) async {
+                              if (details.length == 1) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'At least one item must remain.')),
+                                );
+                                return false; // Cancel the dismissal
+                              }
+                              return true; // Allow the dismissal
+                            },
+                            onDismissed: (direction) {
+                              setState(() {
+                                details.removeAt(index);
+                              });
+                              _saveDraft();
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content:
+                                        Text('${item.productName} removed')),
+                              );
+                            },
+                            child: ItemCard(
+                              totalAmount: item.totalRate,
+                              srt: item.srt.toString(),
+                              name: item.productName,
+                              code: item.partNumber,
+                              quantity: item.quantity.toString(),
+                              foc: item.fac.toString(),
+                              sellingPrice: item.sell,
+                              uom: item.uom,
+                              productId: item.productId,
+                              packingName: item.packingName,
+                              packingDescription: item.packingDescription,
+                              packingId: item.packingId,
+                              onUpdate: (updatedItem) {
+                                setState(() {
+                                  details[index] = updatedItem;
+                                });
+                                _saveDraft();
+                              },
+                            ),
+                          );
+                        },
                       );
                     }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colour.pWhite, // Change to your brand color
-                    foregroundColor: Colors.black, // Text color
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 16.0,
-                        horizontal:
-                            32), // EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "Next",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  } else if (state is LastInvoiceError) {
+                    return Center(
+                      child: Text("No Invoices"),
+                    );
+                  } else {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                },
+              ),
+            ),
+            SafeArea(
+              //height: MediaQuery.of(context).size.height * .11,
+              bottom: true,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0)
+                    .copyWith(bottom: 16.0), // const EdgeInsets.only(left: 50),
+
+                child: SizedBox(
+                  //width: double.infinity,
+                  width: MediaQuery.of(context).size.width *
+                      0.5, // half screen width
+                  height: 50, // you can adjust height
+                  child: ElevatedButton(
+                    onPressed: () {
+                      print("list length${details.length}");
+                      double totalamount = 0;
+                      int size = details.length;
+                      for (int s = 0; s < size; s++) {
+                        totalamount += details[s].totalRate;
+                      }
+
+                      print("5555555555555555555");
+                      print(totalamount);
+                      print("5555555555555555555");
+
+                      if (totalamount != 0) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SummeryPage(
+                              selectedItemList: details,
+                              client: widget.client,
+                              onInvoiceSaved: () {
+                                _keepDraft = false;
+                              },
+                            ),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Total amount is 0'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Colour.pWhite, // Change to your brand color
+                      foregroundColor: Colors.black, // Text color
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16.0,
+                          horizontal:
+                              32), // EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
+                      elevation: 4,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Next",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
     );
   }
@@ -501,7 +603,7 @@ class _SelectedItemListState extends State<SelectedItemList>
                                                       item.productName ?? '',
                                                   quantity: 1,
                                                   sell: item.sellingPrice
-                                                          ?.toString() ??
+                                                          .toString() ??
                                                       '0',
                                                   totalRate: (item.sellingPrice
                                                               as num?)
@@ -569,6 +671,7 @@ class _SelectedItemListState extends State<SelectedItemList>
                   lastInvoiceCount = details.length;
                   Navigator.pop(context);
                 });
+                _saveDraft();
               },
               child: const Text("Add to Cart"),
             ),

@@ -128,13 +128,19 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
           (response.statusCode == 200 || response.statusCode == 201)) {
         final data = response.data as List<dynamic>;
         final clients = data.map((e) => ClientModel.fromJson(e)).toList();
+        final allClients = await _mergeInactiveClients(
+          clients,
+          companyId: loginModel?.companyId,
+          routeId: loginModel?.routeId ?? 0,
+          db: db,
+        );
 
         await db.clearClients();
-        await db.insertClients(clients);
+        await db.insertClients(allClients);
         await db.updateClientSyncDateStamp(DateTime.now());
 
-        _allClients = clients;
-        emit(ClientListLoaded(clientList: clients, locations: const {}));
+        _allClients = allClients;
+        emit(ClientListLoaded(clientList: allClients, locations: const {}));
       } else {
         emit(ClientListError(
             message:
@@ -160,8 +166,15 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
       if (!event.forceRefresh && !isLocalEmpty) {
         final localClients =
             await db.getClients(loginModel?.routeId, loginModel?.companyId);
-        _allClients = localClients;
-        emit(ClientListLoaded(clientList: localClients, locations: const {}));
+        final allClients = await _mergeInactiveClients(
+          localClients,
+          companyId: loginModel?.companyId,
+          routeId: loginModel?.routeId ?? 0,
+          db: db,
+        );
+        await db.insertClients(allClients);
+        _allClients = allClients;
+        emit(ClientListLoaded(clientList: allClients, locations: const {}));
         return;
       } else {
         final response = await clientListRepo.getClientListAllRepo(
@@ -170,13 +183,19 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
             (response.statusCode == 200 || response.statusCode == 201)) {
           final data = response.data as List<dynamic>;
           final clients = data.map((e) => ClientModel.fromJson(e)).toList();
+          final allClients = await _mergeInactiveClients(
+            clients,
+            companyId: loginModel?.companyId,
+            routeId: loginModel?.routeId ?? 0,
+            db: db,
+          );
 
           await db.clearClients();
-          await db.insertClients(clients);
+          await db.insertClients(allClients);
           await db.updateClientSyncDateStamp(DateTime.now());
 
-          _allClients = clients;
-          emit(ClientListLoaded(clientList: clients, locations: const {}));
+          _allClients = allClients;
+          emit(ClientListLoaded(clientList: allClients, locations: const {}));
         } else {
           emit(ClientListError(
               message:
@@ -186,6 +205,86 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
     } catch (ex) {
       emit(ClientListError(message: 'An error occurred: ${ex.toString()}'));
     }
+  }
+
+  Future<List<ClientModel>> _mergeInactiveClients(
+    List<ClientModel> clients, {
+    required int? companyId,
+    required int routeId,
+    required LocalDbHelper db,
+  }) async {
+    List<ClientActiveInActiveModel> inactiveClients = [];
+
+    try {
+      final response =
+          await clientListRepo.getClientListInActive(companyId, routeId, 0);
+      if (response != null &&
+          (response.statusCode == 200 || response.statusCode == 201)) {
+        final data = response.data as List<dynamic>;
+        inactiveClients = data
+            .map((item) => ClientActiveInActiveModel.fromJson(item))
+            .toList();
+        await db.clearInActiveClient();
+        await db.insertInActiveClients(inactiveClients);
+      }
+    } catch (_) {
+      inactiveClients = await db.getInActiveClients(routeId);
+    }
+
+    if (inactiveClients.isEmpty) {
+      inactiveClients = await db.getInActiveClients(routeId);
+    }
+
+    final clientsById = <int, ClientModel>{
+      for (final client in clients)
+        if (client.id != null) client.id!: client,
+    };
+
+    for (final inactive in inactiveClients) {
+      final clientId = inactive.clientId;
+      if (clientId == null) {
+        continue;
+      }
+
+      final existing = clientsById[clientId];
+      clientsById[clientId] = ClientModel(
+        companyId: existing?.companyId ?? companyId,
+        id: clientId,
+        name: existing?.name?.isNotEmpty == true
+            ? existing!.name
+            : inactive.clientName,
+        contactPersonName: existing?.contactPersonName?.isNotEmpty == true
+            ? existing!.contactPersonName
+            : inactive.clientName,
+        routeId: existing?.routeId ?? inactive.routeId ?? routeId,
+        routeName: existing?.routeName,
+        amount: existing?.amount ?? 0,
+        mobile: existing?.mobile,
+        salesmanId: existing?.salesmanId,
+        salesmanName: existing?.salesmanName,
+        latitude: existing?.latitude,
+        longitude: existing?.longitude,
+        transactionYear: existing?.transactionYear,
+        clientSortOrder: existing?.clientSortOrder,
+        isActive: 'N',
+        createdDate: existing?.createdDate ?? inactive.invoiceDate,
+        profilePicUrl: existing?.profilePicUrl,
+        localProfileImagePath: existing?.localProfileImagePath,
+      );
+    }
+
+    final result = clientsById.values.toList()
+      ..sort((first, second) {
+        final firstOrder = first.clientSortOrder;
+        final secondOrder = second.clientSortOrder;
+        if (firstOrder != null && secondOrder != null) {
+          return firstOrder.compareTo(secondOrder);
+        }
+        if (firstOrder != null) return -1;
+        if (secondOrder != null) return 1;
+        return (first.name ?? '').compareTo(second.name ?? '');
+      });
+    return result;
   }
 
   Future<void> _onSearchClientListEvent(

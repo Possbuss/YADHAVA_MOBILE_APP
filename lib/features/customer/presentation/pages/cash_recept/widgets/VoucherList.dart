@@ -78,7 +78,7 @@ class VoucherListTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   const VoucherListTile({
-    Key? key,
+    super.key,
     required this.voucherType,
     required this.title,
     required this.subtitle,
@@ -86,7 +86,7 @@ class VoucherListTile extends StatelessWidget {
     required this.invoiceDate,
     required this.paidAmount,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +114,7 @@ class VoucherListTile extends StatelessWidget {
       trailing: Column(
         mainAxisSize: MainAxisSize.min,
         children:  [
-          Text('${formatRupees(paidAmount)}', style: AppTextThemes.h5),
+          Text(formatRupees(paidAmount), style: AppTextThemes.h5),
           Text(invoiceNo, style: AppTextThemes.h5),
         ],
       ),

@@ -74,4 +74,21 @@ class ProductItem {
       packingId: map['packingId'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'srt': srt,
+      'productName': productName,
+      'fac': fac,
+      'quantity': quantity,
+      'uom': uom,
+      'sell': sell,
+      'totalRate': totalRate,
+      'productId': productId,
+      'partNumber': partNumber,
+      'packingDescription': packingDescription,
+      'packingName': packingName,
+      'packingId': packingId,
+    };
+  }
 }

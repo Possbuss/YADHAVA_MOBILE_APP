@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../../core/util/local_db_helper.dart';
+import '../../../../auth/domain/login_repo.dart';
 import '../../../data/client_active_inactive_model.dart';
+import '../../../data/client_model.dart';
 import '../../bloc/client_bloc/client_list_bloc.dart';
-
+import '../new_invoice/selected_item_list.dart';
 
 class InActiveClientListScreen extends StatefulWidget {
   const InActiveClientListScreen({super.key});
@@ -38,6 +41,46 @@ class _InActiveClientListScreenState extends State<InActiveClientListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openInvoice(ClientActiveInActiveModel client) async {
+    final clientId = client.clientId;
+    if (clientId == null) {
+      _showMessage('Client ID is not available.');
+      return;
+    }
+
+    final login = await GetLoginRepo().getUserLoginResponse();
+    final savedClient = await LocalDbHelper().getClientById(clientId);
+    if (!mounted || login == null) return;
+
+    final invoiceClient = savedClient ??
+        ClientModel(
+          companyId: login.companyId,
+          id: clientId,
+          name: client.clientName ?? 'Unnamed Client',
+          contactPersonName: client.clientName ?? 'Unnamed Client',
+          routeId: client.routeId ?? login.routeId,
+          amount: 0,
+          isActive: 'N',
+          createdDate: client.invoiceDate,
+        );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SelectedItemList(
+          client: invoiceClient,
+          partyId: clientId,
+        ),
+      ),
+    );
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -125,64 +168,76 @@ class _InActiveClientListScreenState extends State<InActiveClientListScreen> {
                             final ClientActiveInActiveModel client =
                                 filteredClients[index];
                             return Card(
+                              clipBehavior: Clip.antiAlias,
                               elevation: theme.cardTheme.elevation ?? 1,
                               shape: theme.cardTheme.shape ??
                                   RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor:
-                                          colors.primaryContainer,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: colors.onPrimaryContainer,
+                              child: InkWell(
+                                onTap: () => _openInvoice(client),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor:
+                                            colors.primaryContainer,
+                                        child: Icon(
+                                          Icons.person,
+                                          color: colors.onPrimaryContainer,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            client.clientName ??
-                                                'Unnamed Client',
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.calendar_today,
-                                                size: 14,
-                                                color: theme.textTheme.bodySmall
-                                                        ?.color ??
-                                                    colors.onSurfaceVariant,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              client.clientName ??
+                                                  'Unnamed Client',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.w700,
                                               ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Invoice: ${formatDate(client.invoiceDate)}',
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.calendar_today,
+                                                  size: 14,
                                                   color: theme.textTheme
                                                           .bodySmall?.color ??
                                                       colors.onSurfaceVariant,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Invoice: ${formatDate(client.invoiceDate)}',
+                                                  style: theme
+                                                      .textTheme.bodySmall
+                                                      ?.copyWith(
+                                                    color: theme.textTheme
+                                                            .bodySmall?.color ??
+                                                        colors.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      IconButton(
+                                        tooltip: 'Create invoice',
+                                        onPressed: () => _openInvoice(client),
+                                        icon: const Icon(
+                                          Icons.receipt_long_outlined,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );

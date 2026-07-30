@@ -11,6 +11,8 @@ import 'package:Yadhava/features/customer/presentation/pages/customer_details/wi
 import '../../customer_details/bloc/add_item_bloc.dart';
 
 class AddItemPopup extends StatefulWidget {
+  const AddItemPopup({super.key});
+
   @override
   State<AddItemPopup> createState() => _AddItemPopupState();
 }

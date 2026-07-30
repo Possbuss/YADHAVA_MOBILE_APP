@@ -1,7 +1,5 @@
-import 'dart:developer';
 
 
-import '../../../core/constants/api_constants.dart';
 import '../../../core/util/api_query.dart';
 import '../../../core/util/session.dart';
 import '../../auth/data/login_model.dart';
@@ -18,7 +16,7 @@ class VoucherRepo {
     try {
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
       final response = await apiQuery.getQuery(
-        "AccountLedgerReport/GetAccountLedgerReportsMobileApp?AccountId=${acId}&FromDate=${fromdate}&EndDate=${enddate}&CompanyId=${companyId}",
+        "AccountLedgerReport/GetAccountLedgerReportsMobileApp?AccountId=$acId&FromDate=$fromdate&EndDate=$enddate&CompanyId=$companyId",
           //"${ApiConstants.voucher}AccountId=${acId}&FromDate=${fromdate}&EndDate=${enddate}&CompanyId=${companyId}}",
           token);
       if (response != null && response.statusCode == 200) {

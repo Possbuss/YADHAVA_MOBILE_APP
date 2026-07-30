@@ -19,6 +19,7 @@ class CashReceiptRepo{
     }catch(ex){
       Exception(ex);
     }
+    return null;
 
   }
 
@@ -42,6 +43,7 @@ class CashReceiptRepo{
     }catch(ex){
       Exception(ex);
     }
+    return null;
   }
 
 }

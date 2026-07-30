@@ -73,13 +73,10 @@
 
 import 'package:Yadhava/core/util/format_rupees.dart';
 import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
-import 'package:Yadhava/features/home/presentation/bloc/sales_summery/sales_summery_bloc.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/constants/color.dart';
-import '../../../../../core/constants/textthemes.dart';
 import '../../../../customer/presentation/pages/customer_view/widget/coustomer_list.dart';
 import '../../bloc/stockList_bloc/stock_list_bloc.dart';
 
@@ -119,9 +116,9 @@ class SalesRow extends StatelessWidget {
                     }
 
                     return ListView.builder(
-                      itemCount: stockList?.length,
+                      itemCount: stockList.length,
                       itemBuilder: (context, index) {
-                        final stockItem = stockList?[index];
+                        final stockItem = stockList[index];
                         return Column(
                           children: [
                             Padding(
@@ -132,7 +129,7 @@ class SalesRow extends StatelessWidget {
                                   Expanded(
                                       flex: 1,
                                       child: Text(
-                                          stockItem!.invoiceNo.substring(5, 13),
+                                          stockItem.invoiceNo.substring(5, 13),
                                           style: const TextStyle(
                                               color: Colour.mediumGray,
                                               fontWeight: FontWeight.bold))),

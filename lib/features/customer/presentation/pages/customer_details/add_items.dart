@@ -10,7 +10,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/constants/color.dart';
 import 'bloc/add_item_bloc.dart';
-import 'model/addItem_model.dart';
 
 class AddItemScreen extends StatefulWidget {
   final bool isEditScreen;

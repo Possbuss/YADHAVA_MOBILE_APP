@@ -1,11 +1,8 @@
-import 'package:Yadhava/core/util/format_rupees.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/addItem_model.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../../core/constants/color.dart';
-import '../../../../../home/data/stockStsModel.dart';
 
 class ItemCard extends StatefulWidget {
   final String name;
@@ -157,7 +154,7 @@ class _ItemCardState extends State<ItemCard> {
 
 
   void _showEditDialog(BuildContext context) {
-    final _formKey = GlobalKey<FormState>(); // Form key for validation
+    final formKey = GlobalKey<FormState>(); // Form key for validation
 
     showDialog(
       context: context,
@@ -168,7 +165,7 @@ class _ItemCardState extends State<ItemCard> {
           title: const Text("Edit Item", style: TextStyle(color: Colour.blackgery)),
           content: SingleChildScrollView(
             child: Form(
-              key: _formKey, // Assign form key
+              key: formKey, // Assign form key
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -285,7 +282,7 @@ class _ItemCardState extends State<ItemCard> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   setState(() {
                     widget.quantity = qtyController.text;
                     widget.sellingPrice = priceController.text;

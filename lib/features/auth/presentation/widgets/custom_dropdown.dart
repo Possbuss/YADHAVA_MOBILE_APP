@@ -8,11 +8,11 @@ class CustomDropdown extends StatefulWidget {
   final List<String> options;
   final ValueChanged<String?>? onChanged;
   const CustomDropdown({
-    Key? key,
+    super.key,
     required this.label,
     required this.hint,
     required this.options, this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomDropdown> createState() => _CustomDropdownState();

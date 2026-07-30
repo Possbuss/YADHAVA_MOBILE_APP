@@ -71,7 +71,7 @@ class StockStatusContainer extends StatelessWidget {
                         ),
                       ),
                       title: Text(
-                        "${stockList[index].productName}",
+                        stockList[index].productName,
                         style: AppTextThemes.h5,
                         overflow: TextOverflow.ellipsis,
                       ),

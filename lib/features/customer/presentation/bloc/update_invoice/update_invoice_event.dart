@@ -17,7 +17,6 @@
 import 'package:Yadhava/features/customer/model/mobile_app_sales_Invoice_all.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../model/InvoiceModel.dart';
 
 abstract class UpdateInvoiceEvent extends Equatable {
   const UpdateInvoiceEvent();

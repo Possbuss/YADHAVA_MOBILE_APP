@@ -401,7 +401,6 @@
 // }
 
 import 'package:Yadhava/core/constants/color.dart';
-import 'package:Yadhava/features/customer/model/InvoiceModel.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/addItem_model.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/product_master.dart';
 import 'package:Yadhava/features/customer/presentation/pages/new_invoice/selected_item_list.dart';
@@ -742,7 +741,7 @@ class _InvoiceListState extends State<InvoiceList> {
                                             srt: (item.srt as num?)?.toInt() ?? 0,
                                             productName: item.productName ?? '',
                                             quantity: 1,
-                                            sell: item.sellingPrice?.toString() ?? '0',
+                                            sell: item.sellingPrice.toString() ?? '0',
                                             totalRate: (item.sellingPrice as num?)?.toDouble() ?? 0.0,
                                             uom: item.packingName ?? '',
                                             packingDescription: item.packingDescription ?? '',

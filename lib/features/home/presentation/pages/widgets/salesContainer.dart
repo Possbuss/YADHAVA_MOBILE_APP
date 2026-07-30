@@ -24,7 +24,7 @@ class SalesContainer extends StatelessWidget {
 
     return {
       'branchName': storedResponse!.vehicleName ?? "N/A",
-      'routeName': storedResponse!.routeName ?? "N/A",
+      'routeName': storedResponse.routeName ?? "N/A",
     };
   }
 

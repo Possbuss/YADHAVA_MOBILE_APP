@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'package:Yadhava/features/customer/data/client_model.dart';
 import 'package:Yadhava/features/customer/model/last_invoice_model.dart';
 import 'package:Yadhava/features/customer/model/mobile_app_sales_Invoice_all.dart';
-import 'package:Yadhava/features/home/data/stockStsModel.dart';
 import 'package:Yadhava/features/route/model/route_history_model.dart';
-import 'package:Yadhava/features/route/presentation/pages/route_details/route_details.dart';
 
 import '../../home/data/home_data.dart';
 import '../../route/model/route_detailsModel.dart';

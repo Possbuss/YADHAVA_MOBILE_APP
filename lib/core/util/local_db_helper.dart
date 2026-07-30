@@ -1,11 +1,8 @@
-import 'package:Yadhava/features/auth/data/route_model.dart';
 import 'package:Yadhava/features/customer/data/client_model.dart';
-import 'package:Yadhava/features/customer/model/InvoiceModel.dart';
 import 'package:Yadhava/features/customer/model/cash_receipt_model.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/product_master.dart';
 import 'package:Yadhava/features/home/data/totalSales_model.dart';
 import 'package:Yadhava/features/route/model/route_history_model.dart';
-import 'package:Yadhava/features/route/presentation/pages/route_details/route_details.dart';
 import 'package:Yadhava/features/splash/data/getall_company_model.dart';
 import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1775,12 +1772,26 @@ class LocalDbHelper {
   Future<List<ClientModel>> getClients(int? routeId, int? companyId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('clients',
-        where: 'routeId = ? AND companyId = ? AND isActive = ?',
-        whereArgs: [routeId, companyId, 'Y']);
+        where: 'routeId = ? AND companyId = ?',
+        whereArgs: [routeId, companyId]);
 
     return List.generate(maps.length, (i) {
       return ClientModel.fromJson(maps[i]);
     });
+  }
+
+  Future<ClientModel?> getClientById(int clientId) async {
+    final db = await database;
+    final maps = await db.query(
+      'clients',
+      where: 'id = ?',
+      whereArgs: [clientId],
+      limit: 1,
+    );
+    if (maps.isEmpty) {
+      return null;
+    }
+    return ClientModel.fromJson(maps.first);
   }
 
   Future<void> clearClients() async {

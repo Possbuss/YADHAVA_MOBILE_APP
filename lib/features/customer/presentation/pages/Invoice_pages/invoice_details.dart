@@ -5,15 +5,11 @@ import 'package:Yadhava/core/constants/color.dart';
 import 'package:Yadhava/core/util/format_rupees.dart';
 import 'package:Yadhava/features/auth/data/login_model.dart';
 import 'package:Yadhava/features/auth/domain/login_repo.dart';
-import 'package:Yadhava/features/customer/model/InvoiceModel.dart';
 import 'package:Yadhava/features/customer/model/mobile_app_sales_Invoice_all.dart';
-import 'package:Yadhava/features/customer/presentation/bloc/client_bloc/client_list_bloc.dart';
-import 'package:Yadhava/features/customer/presentation/bloc/inovice_bloc/invoice_bloc.dart';
 import 'package:Yadhava/features/customer/presentation/bloc/update_invoice/update_invoice_state.dart';
 import 'package:Yadhava/features/customer/presentation/pages/Invoice_pages/widgets/CustomAlert.dart';
 import 'package:Yadhava/features/customer/presentation/pages/Invoice_pages/widgets/discount_field.dart';
 import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/product_master.dart';
-import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -94,7 +90,7 @@ class _InvoiceDetailsPageState extends State<InvoiceDetailsPage> {
   double roundOf = 0.0;
   double totalNet = 0.0;
   bool credit = true;
-  bool _isUpdatingDiscount = false;
+  final bool _isUpdatingDiscount = false;
   int vehicleId = 0;
   int companyId = 0;
   bool _loadingDialogShown = false;
@@ -1431,7 +1427,7 @@ class _EditItemDialog extends StatefulWidget {
   final bool isTaxInvoice;
 
   const _EditItemDialog(
-      {super.key, required this.item, required this.isTaxInvoice});
+      {required this.item, required this.isTaxInvoice});
 
   @override
   __EditItemDialogState createState() => __EditItemDialogState();

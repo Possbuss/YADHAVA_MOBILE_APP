@@ -51,11 +51,11 @@ class ReceiptList extends StatelessWidget {
   final VoidCallback? onVoucherUpdated; // ✅ add this
 
 
-  const ReceiptList({Key? key,
+  const ReceiptList({super.key,
     required this.clientId,
     required this.receipts,
   this.onVoucherUpdated,
-  }) : super(key: key);
+  });
 
 
   @override

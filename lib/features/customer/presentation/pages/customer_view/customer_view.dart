@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import '../../../../auth/data/login_model.dart';
 import '../../../../auth/domain/login_repo.dart';
 import '../../bloc/client_bloc/client_list_bloc.dart';
-import '../../bloc/last_invoice_bloc/lastinvoice_bloc.dart';
 import 'customer_create/customer_create.dart';
 
 class CustomerView extends StatefulWidget {
@@ -26,18 +25,15 @@ class _CustomerViewState extends State<CustomerView> {
 
   @override
   void initState() {
-
     // TODO: implement initState
     super.initState();
 
     fromDate = _getFromDate(30);
     endDate = _getEndDate();
     _fetchData();
-
   }
 
   Future<void> _fetchData() async {
-
     final GetLoginRepo userRepo = GetLoginRepo();
     LoginModel? responseModel = await userRepo.getUserLoginResponse();
     if (!mounted) return;
@@ -48,7 +44,9 @@ class _CustomerViewState extends State<CustomerView> {
       });
 
       /// Fetch updated customer list
-      context.read<ClientListBloc>().add(ClientListGetEvent());
+      context
+          .read<ClientListBloc>()
+          .add(const ClientListGetEvent(forceRefresh: true));
 
       //context.read<LastInvoiceBloc>().add(LastInvoiceEvent());
     } else {
@@ -107,14 +105,14 @@ class _CustomerViewState extends State<CustomerView> {
             backgroundColor: const Color(0xff703BF7),
             onPressed: () async {
               final result = await Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => CustomerCreate())
-              );
+                  MaterialPageRoute(builder: (context) => CustomerCreate()));
 
               if (!mounted) return; // ✅ guard context use
               if (result == true) {
-                context.read<ClientListBloc>().add(ClientListGetEvent());
+                context
+                    .read<ClientListBloc>()
+                    .add(const ClientListGetEvent(forceRefresh: true));
               }
-
             },
             child: const Icon(
               Icons.add,

@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../model/route_history_model.dart';
 import '../../../repository/route_history_repo.dart';
 
 part 'route_history_event.dart';

@@ -151,12 +151,8 @@
 //   }
 // }
 
-import 'package:Yadhava/features/customer/presentation/bloc/cash_recipt_bloc/cash_receipt_bloc.dart';
-import 'package:Yadhava/features/customer/presentation/bloc/client_bloc/client_list_bloc.dart';
-import 'package:Yadhava/features/customer/presentation/bloc/client_create/client_create_bloc.dart';
 import 'package:Yadhava/features/customer/presentation/pages/cash_recept/widgets/custom_dropdown.dart';
 import 'package:Yadhava/features/customer/presentation/pages/cash_recept/widgets/qr_popup.dart';
-import 'package:Yadhava/features/home/presentation/bloc/home/home_bloc.dart';
 import 'package:Yadhava/features/splash/data/getall_company_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -332,6 +328,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
                           if (value!.isEmpty) {
                             return "required";
                           }
+                          return null;
                         },
                         keyboardType: TextInputType.number,
                         label: 'Paid Amount',
@@ -345,6 +342,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
                         if (value!.isEmpty) {
                           return "required";
                         }
+                        return null;
                       },
                       onTap: () async {
                         DateTime? pickedDate = await showDatePicker(

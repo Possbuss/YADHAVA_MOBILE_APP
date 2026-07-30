@@ -1,11 +1,9 @@
-import 'package:Yadhava/features/customer/presentation/pages/customer_details/model/order_model.dart';
 import 'package:Yadhava/features/home/data/cash_credit_details.dart';
 import 'package:Yadhava/features/home/data/cash_summery.dart';
 import 'package:Yadhava/features/home/data/credit_summery.dart';
 import 'package:Yadhava/features/home/data/sales_summery.dart';
 import 'package:Yadhava/features/home/data/stockStsModel.dart';
 import 'package:Yadhava/features/home/data/totalSales_model.dart';
-import 'package:Yadhava/features/route/presentation/pages/route_details/route_details.dart';
 
 class MobileAppSalesDashBoardHome {
   final List<SalesTransactions>? mobileAppSalesDashBoard;

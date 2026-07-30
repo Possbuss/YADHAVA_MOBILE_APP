@@ -8,6 +8,9 @@ import 'package:Yadhava/features/customer/domain/client_repo.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
+import 'package:Yadhava/features/customer/data/client_model.dart';
+import 'package:Yadhava/features/customer/presentation/pages/new_invoice/selected_item_list.dart';
 
 class RouteMapPage extends StatefulWidget {
   const RouteMapPage({super.key});
@@ -294,6 +297,42 @@ class _RouteMapPageState extends State<RouteMapPage> {
     if (!await launchUrl(mapUri, mode: LaunchMode.externalApplication)) {
       _showMessage('Unable to open map for ${client.clientName}.');
     }
+  }
+
+  void _navigateToInvoiceList(RouteMapClientModel routeClient) async {
+    final LoginModel? loginModel = await _loginRepo.getUserLoginResponse();
+    if (loginModel == null) {
+      _showMessage('User session not found.');
+      return;
+    }
+
+    final ClientModel client = ClientModel(
+      companyId: loginModel.companyId,
+      id: routeClient.clientId,
+      name: routeClient.clientName,
+      contactPersonName: routeClient.clientName,
+      routeId: routeClient.routeId,
+      routeName: routeClient.routeName,
+      latitude: routeClient.latitude,
+      longitude: routeClient.longitude,
+      clientSortOrder: routeClient.sortOrder,
+      profilePicUrl: routeClient.profilePicUrl,
+    );
+
+    final String fromDate = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 30)));
+    final String toDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelectedItemList(
+          client: client,
+          partyId: routeClient.clientId,
+        ),
+      ),
+    );
   }
 
   void _showMessage(String message) {
@@ -671,23 +710,43 @@ class _RouteMapPageState extends State<RouteMapPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: IconButton(
-                    tooltip: 'Navigate',
-                    onPressed: client.hasValidLocation
-                        ? () => _openClientMap(client)
-                        : null,
-                    icon: Icon(
-                      Icons.location_on_outlined,
-                      color: client.hasValidLocation
-                          ? const Color(0xFF4B3D69)
-                          : Colors.grey,
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        tooltip: 'Navigate',
+                        onPressed: client.hasValidLocation
+                            ? () => _openClientMap(client)
+                            : null,
+                        icon: Icon(
+                          Icons.location_on_outlined,
+                          color: client.hasValidLocation
+                              ? const Color(0xFF4B3D69)
+                              : Colors.grey,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        tooltip: 'Create Invoice',
+                        onPressed: () => _navigateToInvoiceList(client),
+                        icon: const Icon(
+                          Icons.add_shopping_cart,
+                          color: Color(0xFF4B3D69),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../auth/data/login_model.dart';
 import '../../../../auth/domain/login_repo.dart';
 import '../../../data/client_model.dart';
+import '../../../data/local/invoice_draft_local_data_source.dart';
 import '../customer_details/bloc/add_item_bloc.dart';
 import '../customer_details/model/addItem_model.dart';
 import '../customer_details/model/order_model.dart';
@@ -21,11 +22,13 @@ import '../customer_details/model/order_model.dart';
 class SummeryPage extends StatefulWidget {
   final ClientModel client;
   final List selectedItemList;
+  final VoidCallback? onInvoiceSaved;
 
   const SummeryPage({
     super.key,
     required this.selectedItemList,
     required this.client,
+    this.onInvoiceSaved,
   });
 
   @override
@@ -214,6 +217,11 @@ class _SummeryPageState extends State<SummeryPage> {
     return BlocListener<AddItemBloc, AddItemState>(
       listener: (context, state) async {
         if (state is ItemPostedSuccess) {
+          await InvoiceDraftLocalDataSource().clear();
+          widget.onInvoiceSaved?.call();
+          if (!context.mounted) {
+            return;
+          }
           if (_loadingDialogShown) {
             Navigator.of(context, rootNavigator: true).pop();
             _loadingDialogShown = false;
@@ -226,14 +234,13 @@ class _SummeryPageState extends State<SummeryPage> {
           );
           await Future.delayed(const Duration(seconds: 1));
           if (context.mounted) {
-            Navigator.of(context).pushAndRemoveUntil(
+            Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => InvoicePage(
                   client: widget.client,
                   partyId: widget.client.id,
                 ),
               ),
-              (route) => false,
             );
           }
         } else if (state is SalesInvoiceSaving) {

@@ -19,7 +19,7 @@ class RouteHistoryLoading extends RouteHistoryState {
 class RouteHistoryLoaded extends RouteHistoryState {
   final List<dynamic> routeHistory;
 
-  RouteHistoryLoaded({required this.routeHistory});
+  const RouteHistoryLoaded({required this.routeHistory});
 
   @override
   List<Object> get props => [routeHistory];
@@ -28,7 +28,7 @@ class RouteHistoryLoaded extends RouteHistoryState {
 class RouteHistoryError extends RouteHistoryState {
   final String message;
 
-  RouteHistoryError({required this.message});
+  const RouteHistoryError({required this.message});
 
   @override
   List<Object> get props => [message];
