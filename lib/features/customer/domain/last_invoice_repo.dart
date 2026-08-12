@@ -10,35 +10,30 @@ import '../../auth/data/login_model.dart';
 import '../../auth/domain/login_repo.dart';
 
 class LastInvoiceRepository {
-  ApiQuery apiQuery=ApiQuery();
-  Session session=Session();
-  GetLoginRepo loginRepo=GetLoginRepo();
+  ApiQuery apiQuery = ApiQuery();
+  Session session = Session();
+  GetLoginRepo loginRepo = GetLoginRepo();
 
-
-  Future<bool> syncLastInvoiceAll(
-      int partyId
-      ) async {
-
+  Future<bool> syncLastInvoiceAll(int partyId) async {
     try {
-
       var syncStatus = await getLastInvoiceSyncStatus();
-      if(syncStatus == "SYNCED"){
+      if (syncStatus == "SYNCED") {
         return true;
-      }else{
+      } else {
         LoginModel? loginModel = await loginRepo.getUserLoginResponse();
-        int companyId=loginModel!.companyId;
+        int companyId = loginModel!.companyId;
 
         var db = LocalDbHelper();
 
-        String token= await session.tokenExpired();
-        String routeUrl="${ApiConstants.lastInvoiceAll}partyId=$partyId&companyId=$companyId";
+        String token = await session.tokenExpired();
+        String routeUrl =
+            "${ApiConstants.lastInvoiceAll}partyId=$partyId&companyId=$companyId";
         Response? response = await apiQuery.getQuery(routeUrl, token);
 
         if (response != null && response.statusCode == 200) {
-
-
           final data = response.data as List<dynamic>;
-          final invoiceDetails = data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
+          final invoiceDetails =
+              data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
           await db.insertLastInvoiceData(invoiceDetails);
 
           SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,8 +44,7 @@ class LastInvoiceRepository {
           return false;
         }
       }
-    }
-    catch(ex){
+    } catch (ex) {
       return false;
     }
   }
@@ -66,47 +60,35 @@ class LastInvoiceRepository {
   }
 
   Future<List<MobileAppSalesInvoiceDetail>> fetchLastInvoice(
-      int partyId
-      ) async {
-
+      int partyId) async {
     try {
-
       LoginModel? loginModel = await loginRepo.getUserLoginResponse();
-      int companyId=loginModel!.companyId;
+      int companyId = loginModel!.companyId;
 
       var db = LocalDbHelper();
-      return await db.getLastInvoiceData(partyId, companyId);
-
-
-
-
-      bool isEmpty = await db.isEmptyLastInvoiceData(partyId, companyId);
-      if(!isEmpty){
-
+      final cachedInvoiceDetails =
+          await db.getLastInvoiceData(partyId, companyId);
+      if (cachedInvoiceDetails.isNotEmpty) {
+        return cachedInvoiceDetails;
       }
-      else{
-        String token= await session.tokenExpired();
-        String routeUrl="${ApiConstants.lastInvoiceAll}partyId=$partyId&companyId=$companyId";
-        Response? response = await apiQuery.getQuery(routeUrl, token);
 
-        if (response != null && response.statusCode == 200) {
-          //var responseData = response.data;
+      String token = await session.tokenExpired();
+      String routeUrl =
+          "${ApiConstants.lastInvoiceAll}partyId=$partyId&companyId=$companyId";
+      Response? response = await apiQuery.getQuery(routeUrl, token);
 
-          final data = response.data as List<dynamic>;
-          final lastInvoicedetails = data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
-          await db.insertLastInvoiceData(lastInvoicedetails);
-          return lastInvoicedetails;
-        } else {
-          throw Exception("Unexpected response format");
-        }
-
+      if (response != null && response.statusCode == 200) {
+        final data = response.data as List<dynamic>;
+        final lastInvoiceDetails =
+            data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
+        await db.insertLastInvoiceData(lastInvoiceDetails);
+        return lastInvoiceDetails;
       }
-      
-    }
-    catch(ex){
+
+      throw Exception("Unexpected response format");
+    } catch (ex) {
       print(ex);
       rethrow;
     }
   }
-
 }

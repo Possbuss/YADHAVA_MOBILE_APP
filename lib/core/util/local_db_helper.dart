@@ -830,10 +830,15 @@ class LocalDbHelper {
       List<MobileAppSalesInvoiceDetail>? lastInvoiceDetail,
       int partyId,
       int companyId) async {
-    await clearLastInvoiceData(partyId, companyId);
-    if (lastInvoiceDetail != null) {
-      await insertLastInvoiceData(lastInvoiceDetail);
+    // A null payload means the API did not provide a replacement. Preserve the
+    // existing last-invoice cache instead of making the customer's suggestions
+    // disappear.
+    if (lastInvoiceDetail == null) {
+      return;
     }
+
+    await clearLastInvoiceData(partyId, companyId);
+    await insertLastInvoiceData(lastInvoiceDetail);
   }
 
   Future<List<MobileAppSalesInvoiceDetail>> getLastInvoiceData(
