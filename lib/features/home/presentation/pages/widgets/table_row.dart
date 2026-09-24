@@ -163,11 +163,12 @@ class StockRow extends StatelessWidget {
                 ],
               ),
             );
-          } else if (state is StockListError) {
+          } else if (state is HomeStateError) {
             return Center(
               child: Text(
-                "Something Went Wrong",
+                state.message,
                 style: TextStyle(color: Colour.pWhite),
+                textAlign: TextAlign.center,
               ),
             );
           } else {

@@ -16,34 +16,28 @@ class LastInvoiceRepository {
 
   Future<bool> syncLastInvoiceAll(int partyId) async {
     try {
-      var syncStatus = await getLastInvoiceSyncStatus();
-      if (syncStatus == "SYNCED") {
+      LoginModel? loginModel = await loginRepo.getUserLoginResponse();
+      int companyId = loginModel!.companyId;
+
+      var db = LocalDbHelper();
+
+      String token = await session.tokenExpired();
+      String routeUrl =
+          "${ApiConstants.lastInvoiceAll}partyId=$partyId&companyId=$companyId";
+      Response? response = await apiQuery.getQuery(routeUrl, token);
+
+      if (response != null && response.statusCode == 200) {
+        final data = response.data as List<dynamic>;
+        final invoiceDetails =
+            data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
+        await db.replaceLastInvoiceData(invoiceDetails, partyId, companyId);
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString("LAST_INVOICE_SYNC", "SYNCED");
+
         return true;
-      } else {
-        LoginModel? loginModel = await loginRepo.getUserLoginResponse();
-        int companyId = loginModel!.companyId;
-
-        var db = LocalDbHelper();
-
-        String token = await session.tokenExpired();
-        String routeUrl =
-            "${ApiConstants.lastInvoiceAll}partyId=$partyId&companyId=$companyId";
-        Response? response = await apiQuery.getQuery(routeUrl, token);
-
-        if (response != null && response.statusCode == 200) {
-          final data = response.data as List<dynamic>;
-          final invoiceDetails =
-              data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
-          await db.insertLastInvoiceData(invoiceDetails);
-
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          prefs.setString("LAST_INVOICE_SYNC", "SYNCED");
-
-          return true;
-        } else {
-          return false;
-        }
       }
+      return false;
     } catch (ex) {
       return false;
     }
@@ -82,7 +76,9 @@ class LastInvoiceRepository {
         final lastInvoiceDetails =
             data.map((e) => MobileAppSalesInvoiceDetail.fromJson(e)).toList();
         await db.insertLastInvoiceData(lastInvoiceDetails);
-        return lastInvoiceDetails;
+        // Return the normalized local result rather than the raw API payload.
+        // The API can contain repeated product/packing rows on the first load.
+        return await db.getLastInvoiceData(partyId, companyId);
       }
 
       throw Exception("Unexpected response format");

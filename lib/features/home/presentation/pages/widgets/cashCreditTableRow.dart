@@ -88,11 +88,12 @@ class cashCreditTableRow extends StatelessWidget {
                 ],
               ),
             );
-          } else if (state is CashCreditSummeryError) {
+          } else if (state is HomeStateError) {
             return Center(
               child: Text(
-                "Something Went Wrong",
+                state.message,
                 style: TextStyle(color: Colour.pWhite),
+                textAlign: TextAlign.center,
               ),
             );
           } else {

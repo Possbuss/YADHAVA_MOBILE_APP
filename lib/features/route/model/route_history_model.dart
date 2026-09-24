@@ -1,4 +1,3 @@
-
 class RouteHistory {
   final String routeDate;
   final String routeDay;
@@ -24,27 +23,32 @@ class RouteHistory {
 
   factory RouteHistory.fromJson(Map<String, dynamic> json) {
     return RouteHistory(
-      routeDate: json['routeDate'],
-      routeDay: json['routeDay'],
-      salesManId: json['salesManId'],
-      salesManName: json['salesManName'],
-      routeId: json['routeId'],
-      routeName: json['routeName'],
-      vehicleId: json['vehicleId'],
-      vehicleName: json['vehicleName'],
-      companyId : json['companyId'],
+      routeDate: (json['routeDate'] ?? '').toString(),
+      routeDay: (json['routeDay'] ?? '').toString(),
+      salesManId: _toInt(json['salesManId']),
+      salesManName: (json['salesManName'] ?? '').toString(),
+      routeId: _toInt(json['routeId']),
+      routeName: (json['routeName'] ?? '').toString(),
+      vehicleId: _toInt(json['vehicleId']),
+      vehicleName: (json['vehicleName'] ?? '').toString(),
+      companyId: _toInt(json['companyId']),
     );
   }
 
+  static int _toInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
   Map<String, dynamic> toJson() => {
-    "routeDate": routeDate,
-    "routeDay": routeDay,
-    "salesManId": salesManId,
-    "salesManName": salesManName,
-    "routeId": routeId,
-    "routeName": routeName,
-    "vehicleId": vehicleId,
-    "vehicleName": vehicleName,
-    "companyId":companyId
-  };
+        "routeDate": routeDate,
+        "routeDay": routeDay,
+        "salesManId": salesManId,
+        "salesManName": salesManName,
+        "routeId": routeId,
+        "routeName": routeName,
+        "vehicleId": vehicleId,
+        "vehicleName": vehicleName,
+        "companyId": companyId
+      };
 }

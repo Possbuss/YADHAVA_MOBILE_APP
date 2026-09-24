@@ -452,7 +452,7 @@ class _InvoiceListState extends State<InvoiceList> {
   List<ProductMaster> filteredItems = [];
   List<Map<String, dynamic>> lastInvoiceList = [];
   TextEditingController searchController = TextEditingController();
-  int lastInvoiceCount=0;
+  int lastInvoiceCount = 0;
   void filterItems(String query) {
     setState(() {
       filteredItems = allItems
@@ -475,7 +475,6 @@ class _InvoiceListState extends State<InvoiceList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       resizeToAvoidBottomInset: true,
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -494,7 +493,7 @@ class _InvoiceListState extends State<InvoiceList> {
                 );
               },
               heroTag: "fab1",
-               child: const Icon(Icons.list_alt),
+              child: const Icon(Icons.list_alt),
             ),
             const SizedBox(height: 10),
             FloatingActionButton.small(
@@ -524,7 +523,6 @@ class _InvoiceListState extends State<InvoiceList> {
           ),
         ],
       ),
-
       backgroundColor: Colour.pBackgroundBlack,
       appBar: AppBar(
         backgroundColor: Colour.pBackgroundBlack,
@@ -533,7 +531,6 @@ class _InvoiceListState extends State<InvoiceList> {
           style: TextStyle(color: Colour.pWhite),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0),
         child: SizedBox(
@@ -547,7 +544,8 @@ class _InvoiceListState extends State<InvoiceList> {
                 onChanged: filterItems,
                 decoration: InputDecoration(
                   hintText: "Search Items...",
-                  prefixIcon: const Icon(Icons.search, color: Colour.mediumGray),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Colour.mediumGray),
                   filled: true,
                   fillColor: Colour.blackgery,
                   border: OutlineInputBorder(
@@ -563,89 +561,98 @@ class _InvoiceListState extends State<InvoiceList> {
                 builder: (context, setState) {
                   return BlocBuilder<LastInvoiceBloc, LastInvoiceState>(
                     builder: (context, state) {
-                      if (state is LastInvoiceLoaded) {
+                      if (state is LastInvoiceLoaded &&
+                          state.partyId ==
+                              (widget.partyId ?? widget.client.id ?? 0)) {
                         final data = state.invoice;
-                         lastInvoiceCount=data.length;
-
+                        lastInvoiceCount = data.length;
 
                         return AnimatedSize(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
-                                  child:
-                                  SizedBox(
-                                    height:MediaQuery.of(context).size.height * 0.4,
-                                    child: ListView.builder(
-                                      shrinkWrap: true,
-                                      physics: const AlwaysScrollableScrollPhysics(),
-                                      itemCount: details.length,
-                                      itemBuilder: (BuildContext context, int index) {
-                                        final item = details[index];
+                          child: SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.4,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: details.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final item = details[index];
 
-                                        return Card(
-                                          // color: Colour.pContainerLightBlue.withBlue(90),
+                                return Card(
+                                  // color: Colour.pContainerLightBlue.withBlue(90),
 
-                                          color: Colour.pContainerLightBlue.withBlue(90),
-                                          margin: const EdgeInsets.symmetric(vertical: 3),
-                                          elevation: 5,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: ListTile(
-                                            title: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    item.productName,
-                                                    style: const TextStyle(
-                                                      color: Colour.mediumGray,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ), Text(
-                                                  '₹${item.partNumber}',
-                                                  style: const TextStyle(
-                                                    color: Colour.SilverGrey,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            subtitle: Row(
-                                              children: [
-                                                Text(
-                                                  '₹${item.sell}',
-                                                  style: const TextStyle(
-                                                    color: Colour.SilverGrey,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    details.length==1?showCustomSnackBar(context, "At least one item required", Icon(Icons.error)): setState(() {
-                                                      details.removeAt(index);
-                                                      itemSelected--;
-
-                                                    });
-
-                                                  },
-                                                  child: const Text(
-                                                    "Remove",
-                                                    style: TextStyle(color: Colors.red),
-                                                  ),
-                                                ),
-                                              ],
+                                  color:
+                                      Colour.pContainerLightBlue.withBlue(90),
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 3),
+                                  elevation: 5,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: ListTile(
+                                    title: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.productName,
+                                            style: const TextStyle(
+                                              color: Colour.mediumGray,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        );
-                                      },
+                                        ),
+                                        Text(
+                                          '₹${item.partNumber}',
+                                          style: const TextStyle(
+                                            color: Colour.SilverGrey,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    subtitle: Row(
+                                      children: [
+                                        Text(
+                                          '₹${item.sell}',
+                                          style: const TextStyle(
+                                            color: Colour.SilverGrey,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        TextButton(
+                                          onPressed: () {
+                                            details.length == 1
+                                                ? showCustomSnackBar(
+                                                    context,
+                                                    "At least one item required",
+                                                    Icon(Icons.error))
+                                                : setState(() {
+                                                    details.removeAt(index);
+                                                    itemSelected--;
+                                                  });
+                                          },
+                                          child: const Text(
+                                            "Remove",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-
+                                );
+                              },
+                            ),
+                          ),
                         );
-                      }else if(state is LastInvoiceError){
-                        return Center(child: Text("No Invoices"),);
-                      }else {
+                      } else if (state is LastInvoiceError &&
+                          state.partyId ==
+                              (widget.partyId ?? widget.client.id ?? 0)) {
+                        return Center(
+                          child: Text("No Invoices"),
+                        );
+                      } else {
                         return const Center(child: CircularProgressIndicator());
                       }
                     },
@@ -655,15 +662,17 @@ class _InvoiceListState extends State<InvoiceList> {
 
               /// **Other Items List (Moves Up/Down Depending on Expansion)**
               SizedBox(
-                height: MediaQuery.of(context).size.height/3.3325,
+                height: MediaQuery.of(context).size.height / 3.3325,
                 child: BlocBuilder<AddItemBloc, AddItemState>(
                   builder: (context, state) {
                     if (state is ItemsFetchedState) {
                       allItems = state.items ?? [];
-                      filteredItems = filteredItems.isEmpty ? allItems : filteredItems;
+                      filteredItems =
+                          filteredItems.isEmpty ? allItems : filteredItems;
 
                       if (isItemAdded.length != allItems.length) {
-                        isItemAdded = List.generate(allItems.length, (index) => false);
+                        isItemAdded =
+                            List.generate(allItems.length, (index) => false);
                       }
 
                       return ListView.builder(
@@ -681,7 +690,8 @@ class _InvoiceListState extends State<InvoiceList> {
                             ),
                             child: ListTile(
                               title: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
@@ -713,13 +723,16 @@ class _InvoiceListState extends State<InvoiceList> {
                                   const Spacer(),
                                   TextButton(
                                     onPressed: () {
-                                      if (details.any((element) => element.productId == productId)) {
+                                      if (details.any((element) =>
+                                          element.productId == productId)) {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title: const Text("Item Already Added"),
-                                              content: const Text("This item is already in the list."),
+                                              title: const Text(
+                                                  "Item Already Added"),
+                                              content: const Text(
+                                                  "This item is already in the list."),
                                               actions: [
                                                 TextButton(
                                                   onPressed: () {
@@ -736,27 +749,38 @@ class _InvoiceListState extends State<InvoiceList> {
                                           selectedProductIds.add(productId);
                                           itemSelected++; // Increment item count
 
-                                          ProductItem selectedItem = ProductItem(
-                                            fac: (item.foc as num?)?.toInt() ?? 0,
-                                            srt: (item.srt as num?)?.toInt() ?? 0,
+                                          ProductItem selectedItem =
+                                              ProductItem(
+                                            fac: (item.foc as num?)?.toInt() ??
+                                                0,
+                                            srt: (item.srt as num?)?.toInt() ??
+                                                0,
                                             productName: item.productName ?? '',
                                             quantity: 1,
-                                            sell: item.sellingPrice.toString() ?? '0',
-                                            totalRate: (item.sellingPrice as num?)?.toDouble() ?? 0.0,
+                                            sell:
+                                                item.sellingPrice.toString() ??
+                                                    '0',
+                                            totalRate:
+                                                (item.sellingPrice as num?)
+                                                        ?.toDouble() ??
+                                                    0.0,
                                             uom: item.packingName ?? '',
-                                            packingDescription: item.packingDescription ?? '',
-                                            packingId: (item.packingId as num?)?.toInt() ?? 0,
+                                            packingDescription:
+                                                item.packingDescription ?? '',
+                                            packingId: (item.packingId as num?)
+                                                    ?.toInt() ??
+                                                0,
                                             packingName: item.packingName ?? '',
                                             partNumber: item.partNumber ?? '',
                                             productId: productId,
                                           );
 
-
                                           details.add(selectedItem);
                                         });
                                       }
                                     },
-                                    child: const Text("Add", style: TextStyle(color: Colors.green)),
+                                    child: const Text("Add",
+                                        style: TextStyle(color: Colors.green)),
                                   ),
                                 ],
                               ),
@@ -770,57 +794,60 @@ class _InvoiceListState extends State<InvoiceList> {
                   },
                 ),
               ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0, top: 15),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          // Column(
-                          //   children: [
-                          //     Text(
-                          //       "Items Selected: ${itemSelected==0?"updating..":itemSelected  }",
-                          //       style: const TextStyle(color: Colour.mediumGray),
-                          //     ), Text(
-                          //       "Last Invoice Count: ${lastInvoiceCount==0?"updating..":lastInvoiceCount  }",
-                          //       style: const TextStyle(color: Colour.mediumGray),
-                          //     ),
-                          //   ],
-                          // ),
-                     const  SizedBox(width: 15,),
-                          Center(
-                            child: TextButton(
-                              onPressed: () {
-                                if (details.isEmpty) {
-                                  showCustomSnackBar(
-                                      context,
-                                      "Select any Item",
-                                      const Icon(
-                                        Icons.error,
-                                        color: Colors.red,
-                                      ));
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SelectedItemList(
-                                        client: widget.client,
-                                        // details: details,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Text("Next",style: TextStyle(color: Colour.pWhite),),
-                            ),
-                          ),
-                        ],
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, top: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Column(
+                    //   children: [
+                    //     Text(
+                    //       "Items Selected: ${itemSelected==0?"updating..":itemSelected  }",
+                    //       style: const TextStyle(color: Colour.mediumGray),
+                    //     ), Text(
+                    //       "Last Invoice Count: ${lastInvoiceCount==0?"updating..":lastInvoiceCount  }",
+                    //       style: const TextStyle(color: Colour.mediumGray),
+                    //     ),
+                    //   ],
+                    // ),
+                    const SizedBox(
+                      width: 15,
+                    ),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          if (details.isEmpty) {
+                            showCustomSnackBar(
+                                context,
+                                "Select any Item",
+                                const Icon(
+                                  Icons.error,
+                                  color: Colors.red,
+                                ));
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SelectedItemList(
+                                  client: widget.client,
+                                  // details: details,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          "Next",
+                          style: TextStyle(color: Colour.pWhite),
+                        ),
                       ),
-                    )
-
+                    ),
+                  ],
+                ),
+              )
             ],
           ),
         ),
-
       ),
     );
   }

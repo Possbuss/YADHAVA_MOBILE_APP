@@ -111,12 +111,30 @@ class ApiQuery {
     );
   }
 
+  Future<Response?> postQueryWithTimeout(
+    String routeUrl,
+    String token,
+    Map<String, dynamic> data, {
+    required Duration receiveTimeout,
+    required Duration sendTimeout,
+  }) {
+    return _performPost(
+      routeUrl,
+      data,
+      token: token,
+      receiveTimeout: receiveTimeout,
+      sendTimeout: sendTimeout,
+    );
+  }
+
   Future<Response?> _performPost(
     String routeUrl,
     Map<String, dynamic> data, {
     String? token,
     Map<String, dynamic>? extraHeaders,
     bool requiresAuth = true,
+    Duration? receiveTimeout,
+    Duration? sendTimeout,
   }) async {
     final String url = routeUrl;
 
@@ -127,8 +145,14 @@ class ApiQuery {
         requiresAuth: requiresAuth,
       );
 
-      final Response response =
-          await _dio.post(url, data: data, options: options);
+      final Response response = await _dio.post(
+        url,
+        data: data,
+        options: options.copyWith(
+          receiveTimeout: receiveTimeout,
+          sendTimeout: sendTimeout,
+        ),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response;
@@ -243,12 +267,11 @@ class ApiQuery {
   }) async {
     final String url = routeUrl;
     try {
-      final Options options =
-          await authOptions(
-            token: token,
-            extraHeaders: extraHeaders,
-            requiresAuth: requiresAuth,
-          );
+      final Options options = await authOptions(
+        token: token,
+        extraHeaders: extraHeaders,
+        requiresAuth: requiresAuth,
+      );
 
       final Response response = await _dio.delete(
         url,

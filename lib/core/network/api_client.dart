@@ -67,7 +67,8 @@ class ApiClient {
 
             error.requestOptions.headers['Authorization'] = 'Bearer $token';
             error.requestOptions.extra['retriedWithFreshToken'] = true;
-            final Response<dynamic> response = await dio.fetch(error.requestOptions);
+            final Response<dynamic> response =
+                await dio.fetch(error.requestOptions);
             handler.resolve(response);
           } catch (_) {
             handler.next(error);
@@ -103,10 +104,9 @@ class ApiClient {
       return refreshModel.accessToken;
     }
 
-    final String refreshToken =
-        (refreshModel?.refreshToken.isNotEmpty ?? false)
-            ? refreshModel!.refreshToken
-            : loginModel.refreshToken;
+    final String refreshToken = (refreshModel?.refreshToken.isNotEmpty ?? false)
+        ? refreshModel!.refreshToken
+        : loginModel.refreshToken;
 
     if (refreshToken.isEmpty) {
       return null;
@@ -123,13 +123,18 @@ class ApiClient {
 
     final String? token = await getValidAccessToken();
     if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = options.headers['Authorization'] ?? 'Bearer $token';
+      options.headers['Authorization'] =
+          options.headers['Authorization'] ?? 'Bearer $token';
     }
 
-    options.headers['routeId'] = options.headers['routeId'] ?? loginModel.routeId;
-    options.headers['vehicleId'] = options.headers['vehicleId'] ?? loginModel.vehicleId;
-    options.headers['companyId'] = options.headers['companyId'] ?? loginModel.companyId;
-    options.headers['employeeId'] = options.headers['employeeId'] ?? loginModel.employeeId;
+    options.headers['routeId'] =
+        options.headers['routeId'] ?? loginModel.routeId;
+    options.headers['vehicleId'] =
+        options.headers['vehicleId'] ?? loginModel.vehicleId;
+    options.headers['companyId'] =
+        options.headers['companyId'] ?? loginModel.companyId;
+    options.headers['employeeId'] =
+        options.headers['employeeId'] ?? loginModel.employeeId;
     options.headers['userId'] = options.headers['userId'] ?? loginModel.userId;
   }
 
@@ -185,7 +190,8 @@ class ApiClient {
         ),
       );
 
-      if (response.statusCode != 200 || response.data is! Map<String, dynamic>) {
+      if (response.statusCode != 200 ||
+          response.data is! Map<String, dynamic>) {
         throw Exception('Failed to refresh token.');
       }
 
@@ -210,6 +216,11 @@ class ApiClient {
   }
 
   Exception mapDioException(DioException error) {
+    final String? serverMessage = _serverErrorMessage(error.response?.data);
+    if (serverMessage != null) {
+      return Exception(serverMessage);
+    }
+
     final Object? rawError = error.error;
     final String message =
         rawError?.toString() ?? error.message ?? 'Unknown error';
@@ -229,5 +240,40 @@ class ApiClient {
     }
 
     return Exception(message);
+  }
+
+  String? _serverErrorMessage(dynamic data) {
+    if (data is! Map) return null;
+
+    final List<String> messages = <String>[];
+    for (final key in const [
+      'message',
+      'Message',
+      'title',
+      'Title',
+      'detail',
+      'Detail'
+    ]) {
+      final dynamic value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        messages.add(value.toString().trim());
+        break;
+      }
+    }
+
+    final dynamic errors = data['errors'] ?? data['Errors'];
+    if (errors is Map) {
+      for (final entry in errors.entries) {
+        final dynamic value = entry.value;
+        final String text = value is Iterable
+            ? value.map((item) => item.toString()).join(', ')
+            : value?.toString() ?? '';
+        if (text.trim().isNotEmpty) {
+          messages.add('${entry.key}: ${text.trim()}');
+        }
+      }
+    }
+
+    return messages.isEmpty ? null : messages.join('\n');
   }
 }

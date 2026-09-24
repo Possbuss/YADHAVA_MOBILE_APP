@@ -44,9 +44,7 @@ class _CustomerViewState extends State<CustomerView> {
       });
 
       /// Fetch updated customer list
-      context
-          .read<ClientListBloc>()
-          .add(const ClientListGetEvent(forceRefresh: true));
+      context.read<ClientListBloc>().add(const ClientListGetEvent());
 
       //context.read<LastInvoiceBloc>().add(LastInvoiceEvent());
     } else {
@@ -109,9 +107,7 @@ class _CustomerViewState extends State<CustomerView> {
 
               if (!mounted) return; // ✅ guard context use
               if (result == true) {
-                context
-                    .read<ClientListBloc>()
-                    .add(const ClientListGetEvent(forceRefresh: true));
+                context.read<ClientListBloc>().add(const ClientListGetEvent());
               }
             },
             child: const Icon(

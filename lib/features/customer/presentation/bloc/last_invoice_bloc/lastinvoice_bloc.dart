@@ -11,36 +11,43 @@ part 'lastinvoice_state.dart';
 
 class LastInvoiceBloc extends Bloc<LastInvoiceEvent, LastInvoiceState> {
   final LastInvoiceRepository repo;
+  int _fetchGeneration = 0;
 
   LastInvoiceBloc(this.repo) : super(LastInvoiceInitial()) {
     on<FetchLastInvoice>(_onFetchLastInvoice);
 
     on<SyncLastInvoices>(_onSyncLastInvoice);
-
   }
 
   Future<void> _onSyncLastInvoice(
       SyncLastInvoices event, Emitter<LastInvoiceState> emit) async {
     try {
-
       emit(LastInvoiceSyncing());
       await repo.syncLastInvoiceAll(event.partyId);
       emit(LastInvoiceSynced());
       return;
-
     } catch (e) {
-      emit(LastInvoiceSyncError("Failed to Sync Last Invoice: ${e.toString()}"));
+      emit(
+          LastInvoiceSyncError("Failed to Sync Last Invoice: ${e.toString()}"));
     }
   }
 
   Future<void> _onFetchLastInvoice(
       FetchLastInvoice event, Emitter<LastInvoiceState> emit) async {
-    emit(LastInvoiceLoading());
+    final generation = ++_fetchGeneration;
+    emit(LastInvoiceLoading(event.partyId));
     try {
       final invoiceDet = await repo.fetchLastInvoice(event.partyId);
+      if (generation != _fetchGeneration) return;
       final data = invoiceDet;
       List<ProductItem> details = [];
+      final displayedItems = <String>{};
       for (var item in data) {
+        final key = '${item.companyId}:${item.clientId}:'
+            '${item.productId}:${item.packingId}';
+        if (!displayedItems.add(key)) {
+          continue;
+        }
         ProductItem selectedItem = ProductItem(
           fac: 0,
           srt: 0,
@@ -59,9 +66,11 @@ class LastInvoiceBloc extends Bloc<LastInvoiceEvent, LastInvoiceState> {
         details.add(selectedItem);
       }
 
-      emit(LastInvoiceLoaded(details));
+      emit(LastInvoiceLoaded(event.partyId, details));
     } catch (e) {
-      emit(LastInvoiceError("Failed to load invoice: ${e.toString()}"));
+      if (generation != _fetchGeneration) return;
+      emit(LastInvoiceError(
+          event.partyId, "Failed to load invoice: ${e.toString()}"));
     }
   }
 }

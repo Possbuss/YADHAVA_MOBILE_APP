@@ -17,14 +17,21 @@ class SalesTransactions {
 
   factory SalesTransactions.fromJson(Map<String, dynamic> json) {
     return SalesTransactions(
-      branchId: json['branchId'],
-      branchName: json['branchName'],
-      routeId: json['routeId'],
-      routeName: json['routeName'],
-      amount: (json['amount'] as num).toDouble(),
-      payType: json['payType'],
+      branchId: _toInt(json['branchId']),
+      branchName: (json['branchName'] ?? '').toString(),
+      routeId: _toInt(json['routeId']),
+      routeName: (json['routeName'] ?? '').toString(),
+      amount: _toDouble(json['amount']),
+      payType: (json['payType'] ?? '').toString(),
     );
   }
+
+  static int _toInt(dynamic value) =>
+      value is num ? value.toInt() : int.tryParse(value?.toString() ?? '') ?? 0;
+
+  static double _toDouble(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse(value?.toString() ?? '') ?? 0;
 
   Map<String, dynamic> toJson() {
     return {

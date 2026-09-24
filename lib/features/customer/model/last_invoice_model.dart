@@ -234,25 +234,25 @@ class LastInvoiceModel {
 
   factory LastInvoiceModel.fromJson(Map<String, dynamic> json) {
     return LastInvoiceModel(
-      companyId: json["companyId"],
-      invoiceId: json["invoiceId"],
-      clientId: json["clientId"],
-      clientName: json["clientName"],
-      driverId: json["driverId"],
-      driverName: json["driverName"],
-      payType: json["payType"],
-      invoiceNo: json["invoiceNo"],
-      invoiceDate: json["invoiceDate"],
-      routeId: json["routeId"],
-      vehicleId: json["vehicleId"],
-      vehicleNo: json["vehicleNo"],
+      companyId: _toInt(json["companyId"]),
+      invoiceId: _toInt(json["invoiceId"]),
+      clientId: _toInt(json["clientId"]),
+      clientName: (json["clientName"] ?? '').toString(),
+      driverId: _toInt(json["driverId"]),
+      driverName: (json["driverName"] ?? '').toString(),
+      payType: (json["payType"] ?? '').toString(),
+      invoiceNo: (json["invoiceNo"] ?? '').toString(),
+      invoiceDate: (json["invoiceDate"] ?? '').toString(),
+      routeId: _toInt(json["routeId"]),
+      vehicleId: _toInt(json["vehicleId"]),
+      vehicleNo: (json["vehicleNo"] ?? '').toString(),
       total: (json["total"] ?? 0).toDouble(),
       discountPercentage: json["discountPercentage"] ?? 0,
       discountAmount: (json["discountAmount"] ?? 0).toDouble(),
       netTotal: (json["netTotal"] ?? 0).toDouble(),
       paidAmount: (json["paidAmount"] ?? 0).toDouble(),
       receiptNo: json["receiptNo"],
-      transactionYear: json["transactionYear"],
+      transactionYear: _toInt(json["transactionYear"]),
       latitude: (json["latitude"] ?? 0).toDouble(),
       longitude: (json["longitude"] ?? 0).toDouble(),
       mobileAppSalesInvoiceDetails:
@@ -261,6 +261,11 @@ class LastInvoiceModel {
                   .toList() ??
               [],
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   Map<String, dynamic> toJson() => {
@@ -306,7 +311,6 @@ class MobileAppSalesInvoiceDetail {
   final double? srtQty;
   final double? unitRate;
   final double? totalRate;
-
 
   MobileAppSalesInvoiceDetail({
     required this.siNo,
@@ -360,11 +364,14 @@ class MobileAppSalesInvoiceDetail {
         "srtQty": srtQty,
         "unitRate": unitRate,
         "totalRate": totalRate,
-        "companyId":companyId,
-        "clientId":clientId
+        "companyId": companyId,
+        "clientId": clientId
       };
 
-  static List<MobileAppSalesInvoiceDetail> fromJsonList(List<dynamic> jsonList) {
-    return jsonList.map((json) => MobileAppSalesInvoiceDetail.fromJson(json)).toList();
+  static List<MobileAppSalesInvoiceDetail> fromJsonList(
+      List<dynamic> jsonList) {
+    return jsonList
+        .map((json) => MobileAppSalesInvoiceDetail.fromJson(json))
+        .toList();
   }
 }

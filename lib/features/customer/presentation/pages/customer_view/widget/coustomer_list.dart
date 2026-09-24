@@ -520,9 +520,7 @@ class _CustomerCardListState extends State<CustomerCardList> {
   }
 
   Future<void> _refreshList() async {
-    context
-        .read<ClientListBloc>()
-        .add(const ClientListGetEvent(forceRefresh: true));
+    context.read<ClientListBloc>().add(const ClientListGetEvent());
     await _loadSavedProfileImages();
   }
 

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../../../core/constants/color.dart';
 import '../../../../../core/constants/textthemes.dart';
 import '../../../../auth/domain/logout_repo.dart';
+import '../../../../customer/presentation/bloc/client_bloc/client_list_bloc.dart';
+import '../../../../customer/presentation/bloc/last_invoice_bloc/lastinvoice_bloc.dart';
 import '../../../../customer/presentation/pages/customer_details/bloc/add_item_bloc.dart';
+import '../../bloc/home/home_bloc.dart';
 // update with actual path
 import 'alertBox.dart';
 
@@ -41,6 +45,12 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           );
         } else if (state is SalesInvoicesSynced) {
           Navigator.of(context).pop(); // Close the dialog
+          context.read<HomeBloc>().add(
+                HomeGetEvent(
+                  DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                  forceRefresh: true,
+                ),
+              );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Sales invoices synced successfully")),
           );
@@ -55,14 +65,14 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         backgroundColor: Colour.pBackgroundBlack,
         automaticallyImplyLeading: false,
         elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
           ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -95,7 +105,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
 
-
                 // Sync Button
                 IconButton(
                   onPressed: () {
@@ -113,6 +122,12 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                       rightBtnTap: () {
                         Navigator.pop(context);
                         context.read<AddItemBloc>().add(SyncInvoices());
+                        context
+                            .read<ClientListBloc>()
+                            .add(const SyncClientListEvent(''));
+                        context
+                            .read<LastInvoiceBloc>()
+                            .add(const SyncLastInvoices(0));
                       },
                     );
                   },

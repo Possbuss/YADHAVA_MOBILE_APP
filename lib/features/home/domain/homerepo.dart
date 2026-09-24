@@ -16,7 +16,7 @@ class HomeRepository {
 
     try {
       final response = await apiQuery.getQuery(
-          '${ApiConstants.mobileAppSalesDashBoardHome}companyId=${storedResponse?.companyId}&vehicleId=${storedResponse?.vehicleId}&routeId=${storedResponse?.routeId}&driverId=${storedResponse?.employeeId}&invoiceDate=$date');
+          '${ApiConstants.mobileAppSalesDashBoardHome}companyId=${storedResponse?.companyId}&vehicleId=${storedResponse?.vehicleId}&routeId=${storedResponse?.routeId}&driverId=${storedResponse?.driverId}&invoiceDate=$date');
 
       return response;
     } catch (e) {

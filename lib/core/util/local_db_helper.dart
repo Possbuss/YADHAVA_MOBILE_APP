@@ -40,7 +40,7 @@ class LocalDbHelper {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE company_master (
@@ -314,6 +314,12 @@ class LocalDbHelper {
             totalRate REAL
           )
         ''');
+        await db.execute('''
+          CREATE UNIQUE INDEX IF NOT EXISTS
+            idx_last_invoice_details_item
+          ON last_invoice_details
+            (companyId, clientId, productId, packingId)
+        ''');
 
         await db.execute('''
            CREATE TABLE IF NOT EXISTS product_list (
@@ -508,6 +514,24 @@ class LocalDbHelper {
           await db.execute(
             'ALTER TABLE mobile_app_sales_invoice_master ADD COLUMN roundOf REAL DEFAULT 0',
           );
+        }
+        if (oldVersion < 7) {
+          // Keep the newest copy of each suggested item before enforcing the
+          // unique key. This repairs duplicates already stored on devices.
+          await db.execute('''
+            DELETE FROM last_invoice_details
+            WHERE rowid NOT IN (
+              SELECT MAX(rowid)
+              FROM last_invoice_details
+              GROUP BY companyId, clientId, productId, packingId
+            )
+          ''');
+          await db.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS
+              idx_last_invoice_details_item
+            ON last_invoice_details
+              (companyId, clientId, productId, packingId)
+          ''');
         }
       },
     );
@@ -813,9 +837,10 @@ class LocalDbHelper {
   Future<void> insertLastInvoiceData(
       List<MobileAppSalesInvoiceDetail> lastInvoiceDetail) async {
     final db = await database;
+    final uniqueDetails = _uniqueLastInvoiceDetails(lastInvoiceDetail);
     await db.transaction((txn) async {
       final batch = txn.batch();
-      for (final invoice in lastInvoiceDetail) {
+      for (final invoice in uniqueDetails) {
         batch.insert(
           'last_invoice_details',
           invoice.toJson(),
@@ -823,6 +848,51 @@ class LocalDbHelper {
         );
       }
       await batch.commit(noResult: true); // set noResult to true for speed
+    });
+  }
+
+  List<MobileAppSalesInvoiceDetail> _uniqueLastInvoiceDetails(
+      List<MobileAppSalesInvoiceDetail> details) {
+    final uniqueItems = <String, MobileAppSalesInvoiceDetail>{};
+    for (final detail in details) {
+      final key = '${detail.companyId}:${detail.clientId}:'
+          '${detail.productId}:${detail.packingId}';
+      uniqueItems[key] = detail;
+    }
+    return uniqueItems.values.toList();
+  }
+
+  Future<void> replaceLastInvoiceData(
+      List<MobileAppSalesInvoiceDetail> lastInvoiceDetail,
+      int partyId,
+      int companyId) async {
+    final db = await database;
+    final uniqueDetails = _uniqueLastInvoiceDetails(lastInvoiceDetail);
+
+    await db.transaction((txn) async {
+      if (partyId == 0) {
+        await txn.delete(
+          'last_invoice_details',
+          where: 'companyId = ?',
+          whereArgs: [companyId],
+        );
+      } else {
+        await txn.delete(
+          'last_invoice_details',
+          where: 'clientId = ? AND companyId = ?',
+          whereArgs: [partyId, companyId],
+        );
+      }
+
+      final batch = txn.batch();
+      for (final invoice in uniqueDetails) {
+        batch.insert(
+          'last_invoice_details',
+          invoice.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
     });
   }
 
@@ -837,8 +907,7 @@ class LocalDbHelper {
       return;
     }
 
-    await clearLastInvoiceData(partyId, companyId);
-    await insertLastInvoiceData(lastInvoiceDetail);
+    await replaceLastInvoiceData(lastInvoiceDetail, partyId, companyId);
   }
 
   Future<List<MobileAppSalesInvoiceDetail>> getLastInvoiceData(
@@ -847,10 +916,19 @@ class LocalDbHelper {
     final List<Map<String, dynamic>> maps = await db.query(
         'last_invoice_details',
         where: 'clientId = ? AND companyId = ?',
-        whereArgs: [partyId, companyId]);
-    return List.generate(maps.length, (i) {
-      return MobileAppSalesInvoiceDetail.fromJson(maps[i]);
-    });
+        whereArgs: [partyId, companyId],
+        orderBy: 'rowid DESC');
+
+    // Defensive read-time deduplication also protects installations where an
+    // older database has not completed its migration yet.
+    final uniqueItems = <String, MobileAppSalesInvoiceDetail>{};
+    for (final map in maps) {
+      final detail = MobileAppSalesInvoiceDetail.fromJson(map);
+      final key = '${detail.companyId}:${detail.clientId}:'
+          '${detail.productId}:${detail.packingId}';
+      uniqueItems.putIfAbsent(key, () => detail);
+    }
+    return uniqueItems.values.toList();
   }
 
   // -------------------------------
@@ -1844,7 +1922,7 @@ class LocalDbHelper {
   Future<bool> isEmptySalesTransactions() async {
     final db = await database;
     final result =
-        await db.rawQuery('SELECT COUNT(*) as count FROM product_stocks');
+        await db.rawQuery('SELECT COUNT(*) as count FROM sales_transactions');
     int count = Sqflite.firstIntValue(result) ?? 0;
     return count == 0;
   }

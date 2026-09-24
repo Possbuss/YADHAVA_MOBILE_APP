@@ -98,55 +98,71 @@ class InvoiceRepository {
     try {
       String token = await session.tokenExpired();
       final Map<String, dynamic> data = _mapInvoiceToJson(invoice);
-      final Response? response = await apiQuery.postQuery(
-          ApiConstants.updateSalesInvoice, token, data);
+      final Response? response = await apiQuery.postQueryWithTimeout(
+        ApiConstants.updateSalesInvoice,
+        token,
+        data,
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 60),
+      );
 
-      if (response != null && response.statusCode == 200) {
-        final responseData = response.data; // No need to decode
-        log(responseData['result'].toString());
+      if (response != null &&
+          (response.statusCode == 200 || response.statusCode == 201)) {
+        final responseData = response.data;
+        if (responseData is! Map<String, dynamic>) {
+          throw Exception('The update API returned an invalid response.');
+        }
+        final bool isUpdated =
+            responseData['result'] == true || responseData['Result'] == true;
+        log(isUpdated.toString());
+
+        if (!isUpdated) {
+          final String message = (responseData['message'] ??
+                  responseData['Message'] ??
+                  'The server did not update the invoice.')
+              .toString();
+          throw Exception(message);
+        }
 
         var responseMessageMobileSalesInvoice =
             ResponseMessageMobileSalesInvoice.fromJson(response.data);
 
         if (responseMessageMobileSalesInvoice.result) {
           var db = LocalDbHelper();
+          final invoiceData =
+              responseMessageMobileSalesInvoice.mobileAppSalesInvoiceAll;
+          final dashboardData =
+              responseMessageMobileSalesInvoice.mobileAppSalesDashBoardHome;
 
-          if (responseMessageMobileSalesInvoice.mobileAppSalesInvoiceAll!
-              .mobileAppSalesInvoiceMaster!.isNotEmpty) {
+          if (invoiceData?.mobileAppSalesInvoiceMaster?.isNotEmpty ?? false) {
             await db.clearInvoiceTablesByInvoiceNo(
                 invoice.invoiceNo, invoice.companyId);
 
-            await db.insertInvoices(
-                responseMessageMobileSalesInvoice
-                    .mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMaster,
-                responseMessageMobileSalesInvoice
-                    .mobileAppSalesInvoiceAll!.mobileAppSalesInvoiceMasterDt);
+            await db.insertInvoices(invoiceData!.mobileAppSalesInvoiceMaster,
+                invoiceData.mobileAppSalesInvoiceMasterDt);
           }
 
-          await db.clearTransactions();
-          await db.insertTransactions(responseMessageMobileSalesInvoice
-              .mobileAppSalesDashBoardHome?.mobileAppSalesDashBoard);
+          if (dashboardData != null) {
+            await db.clearTransactions();
+            await db.insertTransactions(dashboardData.mobileAppSalesDashBoard);
 
-          await db.clearProductStocks();
-          await db.insertProductStocks(responseMessageMobileSalesInvoice
-              .mobileAppSalesDashBoardHome?.mobileAppStockBalanceVans);
+            await db.clearProductStocks();
+            await db
+                .insertProductStocks(dashboardData.mobileAppStockBalanceVans);
 
-          await db.clearSalesSummary();
-          await db.insertSalesSummary(responseMessageMobileSalesInvoice
-              .mobileAppSalesDashBoardHome?.mobileAppSales);
+            await db.clearSalesSummary();
+            await db.insertSalesSummary(dashboardData.mobileAppSales);
 
-          await db.clearCreditSummary();
-          await db.insertCreditSummary(responseMessageMobileSalesInvoice
-              .mobileAppSalesDashBoardHome?.mobileAppSalesCredit);
+            await db.clearCreditSummary();
+            await db.insertCreditSummary(dashboardData.mobileAppSalesCredit);
 
-          await db.clearCashSummary();
-          await db.insertCashSummary(responseMessageMobileSalesInvoice
-              .mobileAppSalesDashBoardHome?.mobileAppSalesCash);
+            await db.clearCashSummary();
+            await db.insertCashSummary(dashboardData.mobileAppSalesCash);
 
-          await db.clearCashCreditDetails();
-          await db.insertCashCreditDetails(responseMessageMobileSalesInvoice
-              .mobileAppSalesDashBoardHome
-              ?.salesInvoiceCollectionCreditCashCustomerImports);
+            await db.clearCashCreditDetails();
+            await db.insertCashCreditDetails(
+                dashboardData.salesInvoiceCollectionCreditCashCustomerImports);
+          }
 
           await db.updateClients(
               responseMessageMobileSalesInvoice.clientModel, invoice.clientId);
@@ -165,14 +181,19 @@ class InvoiceRepository {
               invoice.companyId);
         }
 
-        return responseData['result'] ?? false;
+        return true;
       } else if (response != null) {
         throw Exception('Failed with status: ${response.statusCode}');
       } else {
         throw Exception('No response received from the server.');
       }
     } catch (error) {
-      return false;
+      if (error is DioException &&
+          error.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+            'The server is taking too long to update this invoice. Please try again.');
+      }
+      throw Exception('Failed to update invoice: $error');
     }
   }
 

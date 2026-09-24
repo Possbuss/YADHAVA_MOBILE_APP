@@ -171,6 +171,7 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
           companyId: loginModel?.companyId,
           routeId: loginModel?.routeId ?? 0,
           db: db,
+          fetchFromApi: false,
         );
         await db.insertClients(allClients);
         _allClients = allClients;
@@ -212,23 +213,26 @@ class ClientListBloc extends Bloc<ClientListEvent, ClientListState> {
     required int? companyId,
     required int routeId,
     required LocalDbHelper db,
+    bool fetchFromApi = true,
   }) async {
     List<ClientActiveInActiveModel> inactiveClients = [];
 
-    try {
-      final response =
-          await clientListRepo.getClientListInActive(companyId, routeId, 0);
-      if (response != null &&
-          (response.statusCode == 200 || response.statusCode == 201)) {
-        final data = response.data as List<dynamic>;
-        inactiveClients = data
-            .map((item) => ClientActiveInActiveModel.fromJson(item))
-            .toList();
-        await db.clearInActiveClient();
-        await db.insertInActiveClients(inactiveClients);
+    if (fetchFromApi) {
+      try {
+        final response =
+            await clientListRepo.getClientListInActive(companyId, routeId, 0);
+        if (response != null &&
+            (response.statusCode == 200 || response.statusCode == 201)) {
+          final data = response.data as List<dynamic>;
+          inactiveClients = data
+              .map((item) => ClientActiveInActiveModel.fromJson(item))
+              .toList();
+          await db.clearInActiveClient();
+          await db.insertInActiveClients(inactiveClients);
+        }
+      } catch (_) {
+        inactiveClients = await db.getInActiveClients(routeId);
       }
-    } catch (_) {
-      inactiveClients = await db.getInActiveClients(routeId);
     }
 
     if (inactiveClients.isEmpty) {

@@ -63,17 +63,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           await db.clearTransactions();
 
           await db.insertCashCreditDetails(_mobileAppSalesDashBoardHome
-              .salesInvoiceCollectionCreditCashCustomerImports!);
+                  .salesInvoiceCollectionCreditCashCustomerImports ??
+              []);
           await db.insertCashSummary(
-              _mobileAppSalesDashBoardHome.mobileAppSalesCash!);
+              _mobileAppSalesDashBoardHome.mobileAppSalesCash ?? []);
           await db.insertCreditSummary(
-              _mobileAppSalesDashBoardHome.mobileAppSalesCredit!);
-          await db
-              .insertSalesSummary(_mobileAppSalesDashBoardHome.mobileAppSales!);
+              _mobileAppSalesDashBoardHome.mobileAppSalesCredit ?? []);
+          await db.insertSalesSummary(
+              _mobileAppSalesDashBoardHome.mobileAppSales ?? []);
           await db.insertProductStocks(
-              _mobileAppSalesDashBoardHome.mobileAppStockBalanceVans!);
+              _mobileAppSalesDashBoardHome.mobileAppStockBalanceVans ?? []);
           await db.insertTransactions(
-              _mobileAppSalesDashBoardHome.mobileAppSalesDashBoard!);
+              _mobileAppSalesDashBoardHome.mobileAppSalesDashBoard ?? []);
 
           emit(HomeStateLoaded(homeData: _mobileAppSalesDashBoardHome));
           return;

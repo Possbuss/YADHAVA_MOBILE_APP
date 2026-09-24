@@ -55,6 +55,8 @@ class _SelectedItemListState extends State<SelectedItemList>
   bool _keepDraft = true;
   bool _allowPop = false;
 
+  int get _partyId => widget.partyId ?? widget.client.id ?? 0;
+
   @override
   void initState() {
     super.initState();
@@ -73,9 +75,7 @@ class _SelectedItemListState extends State<SelectedItemList>
       }
     });
     context.read<AddItemBloc>().add(FetchItems());
-    context
-        .read<LastInvoiceBloc>()
-        .add(FetchLastInvoice(widget.client.id ?? 0));
+    context.read<LastInvoiceBloc>().add(FetchLastInvoice(_partyId));
     _controller = AnimationController(vsync: this);
     // _calculateTotalAmount();
   }
@@ -165,9 +165,7 @@ class _SelectedItemListState extends State<SelectedItemList>
 
     try {
       // Call your BLoC or repository to fetch the latest data
-      context
-          .read<LastInvoiceBloc>()
-          .add(FetchLastInvoice(widget.client.id ?? 0));
+      context.read<LastInvoiceBloc>().add(FetchLastInvoice(_partyId));
     } catch (e) {
       print("Refresh error: $e");
     }
@@ -282,7 +280,7 @@ class _SelectedItemListState extends State<SelectedItemList>
             Expanded(
               child: BlocBuilder<LastInvoiceBloc, LastInvoiceState>(
                 builder: (context, state) {
-                  if (state is LastInvoiceLoaded) {
+                  if (state is LastInvoiceLoaded && state.partyId == _partyId) {
                     if (!_detailsInitialized) {
                       details = List<ProductItem>.from(state.invoice);
                       _detailsInitialized = true;
@@ -361,7 +359,8 @@ class _SelectedItemListState extends State<SelectedItemList>
                         },
                       );
                     }
-                  } else if (state is LastInvoiceError) {
+                  } else if (state is LastInvoiceError &&
+                      state.partyId == _partyId) {
                     return Center(
                       child: Text("No Invoices"),
                     );

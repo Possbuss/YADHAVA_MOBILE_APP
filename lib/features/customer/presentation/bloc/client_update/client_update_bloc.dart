@@ -12,8 +12,7 @@ part 'client_update_event.dart';
 part 'client_update_state.dart';
 
 class ClientUpdateBloc extends Bloc<ClientUpdateEvent, ClientUpdateState> {
-
-  late ClientModelResponse  _clientModelResponse;
+  late ClientModelResponse _clientModelResponse;
   final UpdateClientListRepo updateClientListRepo;
   ClientUpdateBloc(this.updateClientListRepo) : super(ClientUpdateInitial()) {
     on<UpdateClient>(_onUpdate);
@@ -32,18 +31,13 @@ class ClientUpdateBloc extends Bloc<ClientUpdateEvent, ClientUpdateState> {
           (response.statusCode == 200 || response.statusCode == 201)) {
         String responseBody = response.data.toString();
 
-        _clientModelResponse =
-            ClientModelResponse.fromJson(response.data);
+        _clientModelResponse = ClientModelResponse.fromJson(response.data);
 
-        if(_clientModelResponse.result == true){
-          if (_clientModelResponse.mobileAppClientsLists?.isNotEmpty == true) {
-            var db = LocalDbHelper();
-            db.updateClients(_clientModelResponse.mobileAppClientsLists,event.clientModel.id ?? 0);
-          }
+        if (_clientModelResponse.result == true) {
+          await _storeUpdatedClient(event.clientModel);
           emit(ClientUpdateLoaded(event.clientModel));
           log("Success");
-
-        }else {
+        } else {
           emit(ClientUpdateError('Unexpected response message: $responseBody'));
         }
       } else {
@@ -53,6 +47,47 @@ class ClientUpdateBloc extends Bloc<ClientUpdateEvent, ClientUpdateState> {
     } catch (e) {
       emit(ClientUpdateError('An error occurred: ${e.toString()}'));
     }
+  }
+
+  Future<void> _storeUpdatedClient(ClientModel submittedClient) async {
+    final db = LocalDbHelper();
+    final responseClients = _clientModelResponse.mobileAppClientsLists;
+
+    if (responseClients?.isNotEmpty == true) {
+      await db.insertClients(responseClients!);
+      return;
+    }
+
+    // A successful update may not return the updated customer record. Persist
+    // the submitted values locally while retaining fields that are not present
+    // on the edit form (balance, status, sort order and profile image).
+    final clientId = submittedClient.id;
+    final existing = clientId == null ? null : await db.getClientById(clientId);
+    final mergedClient = ClientModel(
+      companyId: submittedClient.companyId ?? existing?.companyId,
+      id: clientId ?? existing?.id,
+      name: submittedClient.name ?? existing?.name,
+      contactPersonName:
+          submittedClient.contactPersonName ?? existing?.contactPersonName,
+      routeId: submittedClient.routeId ?? existing?.routeId,
+      routeName: submittedClient.routeName ?? existing?.routeName,
+      amount: existing?.amount ?? submittedClient.amount,
+      mobile: submittedClient.mobile ?? existing?.mobile,
+      salesmanId: submittedClient.salesmanId ?? existing?.salesmanId,
+      salesmanName: submittedClient.salesmanName ?? existing?.salesmanName,
+      latitude: submittedClient.latitude ?? existing?.latitude,
+      longitude: submittedClient.longitude ?? existing?.longitude,
+      transactionYear:
+          submittedClient.transactionYear ?? existing?.transactionYear,
+      clientSortOrder:
+          existing?.clientSortOrder ?? submittedClient.clientSortOrder,
+      isActive: existing?.isActive ?? submittedClient.isActive,
+      createdDate: existing?.createdDate ?? submittedClient.createdDate,
+      profilePicUrl: existing?.profilePicUrl ?? submittedClient.profilePicUrl,
+      localProfileImagePath: existing?.localProfileImagePath ??
+          submittedClient.localProfileImagePath,
+    );
+    await db.insertClients([mergedClient]);
   }
 
   void _onResetState(

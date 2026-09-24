@@ -106,7 +106,9 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
     setState(() {
-      userName = response.userName;
+      userName = response.employeeName.trim().isNotEmpty
+          ? response.employeeName
+          : response.userName;
       vehicleId = response.vehicleId;
       driverId = response.driverId;
       companyId = response.companyId;
