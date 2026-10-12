@@ -38,6 +38,7 @@ import '../../../customer/presentation/pages/customer_view/route_map/route_map_p
 import '../../../profile/data/mobile_app_user_profile.dart';
 import '../../../profile/domain/mobile_app_user_profile_repo.dart';
 import '../../../profile/presentation/pages/edit_profile_page.dart';
+import 'bonus_salary_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -425,6 +426,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onTap: _openSalesOrders,
+                ),
+
+                const Divider(color: Colors.white54),
+                const Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Text(
+                    'Earnings',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: Colors.amber,
+                  ),
+                  title: const Text(
+                    'Bonus & Salary',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: const Text(
+                    'Salary details, claims and balance',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BonusSalaryPage(),
+                      ),
+                    );
+                  },
                 ),
 
                 // 🔄 Sync Clients Button (disabled for now)

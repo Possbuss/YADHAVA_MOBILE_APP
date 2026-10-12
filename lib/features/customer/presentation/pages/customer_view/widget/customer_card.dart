@@ -77,10 +77,7 @@ class CustomerCard extends StatelessWidget {
             "$hotelName [ $createdDate ]",
             width,
           ),
-          GestureDetector(
-            onTap: onTap3,
-            child: _buildRow("assets/icon/Location.png", location, width),
-          ),
+          _buildLocationRow(width),
           Visibility(
             visible: salesManName.isNotEmpty,
             child: _buildRow("assets/icon/Profile.png", salesManName, width),
@@ -336,6 +333,73 @@ class CustomerCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLocationRow(double width) {
+    final hasLocation = latitude != null &&
+        longitude != null &&
+        latitude != 0 &&
+        longitude != 0;
+
+    return Semantics(
+      button: hasLocation,
+      label: hasLocation
+          ? 'Location: $location. Double tap to open in Maps.'
+          : 'Location: $location. Maps location is unavailable.',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: hasLocation ? onTap3 : null,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/icon/Location.png',
+                  width: width * 0.05,
+                  height: width * 0.05,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        location,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (hasLocation)
+                        const Text(
+                          'Tap to open in Maps',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (hasLocation) ...[
+                  const Icon(Icons.map_outlined, color: Colors.white, size: 18),
+                  const SizedBox(width: 2),
+                  const Icon(Icons.chevron_right,
+                      color: Colors.white, size: 20),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

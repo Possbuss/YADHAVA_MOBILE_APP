@@ -2,7 +2,7 @@ class ApiConstants {
   ///login section
   static const String baseUrl = "http://10.0.2.2:5274/yadhava/api/";
   static const String baseUrl2 = "http://www.posbuss.com:98/yadhava/api/";
-  static const String baseUrl1 = "http://www.posbuss.com:83/yadhava/api/";
+  static const String baseUrl1 = "https://www.posbuss.com:439/yadhava/api/";
   static const String companyGetAll = "Company/GetCompanyAll";
   static const String getRoute = "MobileAppLogin/GetMobileAppGetRoutes?";
   static const String getVehicle = "MobileAppLogin/GetMobileAppGetVehicles?";
@@ -22,6 +22,8 @@ class ApiConstants {
       "Employee/GetMobileAppUserProfile?";
   static const String updateMobileAppUserProfile =
       "Employee/UpdateMobileAppUserProfile";
+  static const String employeeBonusClaims = 'EmployeeBonusClaim/GetAll?';
+  static const String employeeBonusBalance = 'EmployeeBonusClaim/GetBalance?';
 
   static const String mobileAppInvoices =
       "MobileAppSales/GetMobileAppSalesInvoiceAll?";
